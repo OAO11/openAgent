@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { verifyProviderControls } from './smoke-provider-controls.mjs';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -38,6 +39,7 @@ try {
   assert.equal(health.build.channel,'stable');
   assert.equal(health.startupContract,1);
   assert.ok(!health.capabilities.ssh_manager,'Remote capabilities must remain disabled');
+  await verifyProviderControls(base, token);
   const exited = once(child,'exit');
   child.stdin.end();
   const timer = setTimeout(() => child.kill(), 5_000);

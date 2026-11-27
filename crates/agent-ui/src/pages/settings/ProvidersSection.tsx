@@ -142,7 +142,9 @@ function FailoverSettingsCard(props: SettingsSectionProps & { providerType: Prov
   // Failover keeps the conversation's model and only switches which provider
   // serves it, so the queue holds providers, not models.
   const vendorProviders = useMemo(
-    () => settings.customProviders.filter((provider) => provider.type === providerType),
+    () => settings.customProviders.filter(
+      (provider) => provider.type === providerType && provider.enabled !== false,
+    ),
     [settings.customProviders, providerType],
   );
   const providerById = useMemo(() => {
@@ -694,6 +696,7 @@ function ProviderCardRow(props: {
   dragging: boolean;
   dragHandle: ReactNode;
   onEdit: () => void;
+  onToggleEnabled: (enabled: boolean) => void;
   onDelete: () => void;
   onRefreshUsage: () => void;
 }) {
@@ -708,6 +711,7 @@ function ProviderCardRow(props: {
     dragging,
     dragHandle,
     onEdit,
+    onToggleEnabled,
     onDelete,
     onRefreshUsage,
   } = props;
@@ -724,6 +728,7 @@ function ProviderCardRow(props: {
         "web:max-520:grid web:max-520:grid-cols-settings-provider-card-row",
         "web:max-520:items-center! web:max-520:flex-nowrap!",
         dragging && "bg-settings-active",
+        provider.enabled === false && "opacity-60",
       )}
     >
       {dragHandle}
@@ -842,6 +847,11 @@ function ProviderCardRow(props: {
         ) : null}
       </div>
       <div className="settings-card-actions flex items-center gap-1">
+        <label className="mr-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground" title={t("settings.providerEnabledHint")}>
+          {t(provider.enabled === false ? "settings.providerDisabled" : "settings.providerEnabled")}
+          <Switch checked={provider.enabled !== false} onCheckedChange={onToggleEnabled}
+            aria-label={`${provider.name} · ${t("settings.providerEnabled")}`} />
+        </label>
         <ProviderCopyConfigButton provider={provider} />
         {usageDisplay.show ? (
           <RefreshButton
@@ -882,6 +892,7 @@ function ProviderList(props: {
   providers: CustomProvider[];
   onAdd: () => void;
   onEdit: (provider: CustomProvider) => void;
+  onToggleEnabled: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
   onReorder: (type: ProviderId | "all", nextIds: string[]) => void;
   usageByProvider: ProviderUsageState;
@@ -894,6 +905,7 @@ function ProviderList(props: {
     providers,
     onAdd,
     onEdit,
+    onToggleEnabled,
     onDelete,
     onReorder,
     usageByProvider,
@@ -985,6 +997,7 @@ function ProviderList(props: {
                   dragging={dragging}
                   dragHandle={dragHandle}
                   onEdit={() => onEdit(provider)}
+                  onToggleEnabled={(enabled) => onToggleEnabled(provider.id, enabled)}
                   onDelete={() => onDelete(provider.id)}
                   onRefreshUsage={() => onRefreshUsage(provider.id)}
                 />
@@ -1212,6 +1225,12 @@ export function ProvidersSection(
               providers={settings.customProviders}
               onAdd={openAdd}
               onEdit={openEdit}
+              onToggleEnabled={(id, enabled) => setSettings((prev) => updateCustomProviders(
+                prev,
+                prev.customProviders.map((provider) =>
+                  provider.id === id ? { ...provider, enabled } : provider,
+                ),
+              ))}
               onDelete={handleDelete}
               onReorder={handleProviderReorder}
               usageByProvider={usageByProvider}

@@ -1,0 +1,591 @@
+diff --git a/internal/backend/openagent_provider_controls_test.go b/internal/backend/openagent_provider_controls_test.go
+new file mode 100644
+index 0000000..a6157b1
+--- /dev/null
++++ b/internal/backend/openagent_provider_controls_test.go
+@@ -0,0 +1,66 @@
++package backend
++
++import (
++	"encoding/json"
++	"github.com/Stack-Cairn/K-brain/internal/config"
++	"net/http"
++	"net/http/httptest"
++	"strings"
++	"testing"
++)
++
++func TestOpenAgentProviderControlsSettingsRoundTrip(t *testing.T) {
++	t.Setenv("K_BRAIN_HOME", t.TempDir())
++	cfg := &config.Config{DefaultProvider: "p", DefaultModel: "m", Providers: map[string]config.Provider{
++		"p": {API: "anthropic-messages", APIKey: "fixture-only", ActiveModels: []string{"m"}},
++	}, Models: map[string]config.Model{"m": {ID: "m", Providers: []string{"p"}, Context: 200000, MaxOut: 8192}}}
++	store := NewSettingsStore(cfg, func(next *config.Config) error { return next.Save() })
++	server := &Server{settings: store}
++	put := func(body string) settingsProjection {
++		t.Helper()
++		out := httptest.NewRecorder()
++		server.ServeHTTP(out, httptest.NewRequest(http.MethodPut, "/v1/settings", strings.NewReader(body)))
++		if out.Code != http.StatusOK {
++			t.Fatalf("settings update %d: %s", out.Code, out.Body.String())
++		}
++		if strings.Contains(out.Body.String(), "fixture-only") {
++			t.Fatal("settings exposed a key")
++		}
++		var result settingsProjection
++		if err := json.Unmarshal(out.Body.Bytes(), &result); err != nil {
++			t.Fatal(err)
++		}
++		return result
++	}
++	result := put(`{"providers":[{"id":"p","enabled":false,"models":[{"id":"m","supports1M":true,"contextWindow":1000000,"limitsSource":"user"}]}]}`)
++	if len(result.Models) != 0 || len(result.Providers) != 1 || result.Providers[0].Enabled || len(result.Providers[0].Models) != 1 || !result.Providers[0].Models[0].Supports1M {
++		t.Fatalf("disabled projection: %+v", result)
++	}
++	for _, endpoint := range []string{"/v1/text/generate", "/v1/generate"} {
++		out := httptest.NewRecorder()
++		server.ServeHTTP(out, httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(`{"model":{"provider":"p","model":"m"},"messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}]}`)))
++		if out.Code != http.StatusBadRequest {
++			t.Fatalf("disabled request to %s returned %d", endpoint, out.Code)
++		}
++	}
++	if result.DefaultModel != "" || result.DefaultProvider != "" {
++		t.Fatal("disabled default retained")
++	}
++	loaded, err := config.Load()
++	if err != nil {
++		t.Fatal(err)
++	}
++	if loaded.Providers["p"].IsEnabled() || loaded.Providers["p"].APIKey != "fixture-only" || len(loaded.Providers["p"].ActiveModels) != 1 || !loaded.Models["m"].Supports1M {
++		t.Fatal("settings did not persist")
++	}
++	store = NewSettingsStore(loaded, func(next *config.Config) error { return next.Save() })
++	server = &Server{settings: store}
++	result = put(`{"providers":[{"id":"p","enabled":true}]}`)
++	if len(result.Models) != 1 || !result.Providers[0].Enabled || result.Models[0].ContextWindow != 1000000 || !result.Providers[0].APIKeyConfigured {
++		t.Fatalf("reenable lost data: %+v", result)
++	}
++	result = put(`{"providers":[{"id":"p","models":[{"id":"m","supports1M":false,"contextWindow":200000}]}]}`)
++	if result.Models[0].Supports1M || result.Models[0].ContextWindow != 200000 {
++		t.Fatal("opt-out failed")
++	}
++}
+diff --git a/internal/backend/settings.go b/internal/backend/settings.go
+index 9065ba9..a3cb2ce 100644
+--- a/internal/backend/settings.go
++++ b/internal/backend/settings.go
+@@ -58,6 +58,7 @@ func (s *SettingsStore) Snapshot() *config.Config {
+ }
+ 
+ type settingsProvider struct {
++	Enabled                bool                  `json:"enabled"`
+ 	CacheCapabilities      ai.CacheCapabilities  `json:"cacheCapabilities"`
+ 	CacheSessionAffinity   *bool                 `json:"cacheSessionAffinity,omitempty"`
+ 	CacheControlFormat     string                `json:"cacheControlFormat,omitempty"`
+@@ -89,6 +90,7 @@ type settingsProvider struct {
+ 	Models                   []settingsModel `json:"models"`
+ }
+ type settingsModel struct {
++	Supports1M       bool     `json:"supports1M"`
+ 	Provider         string   `json:"provider"`
+ 	ID               string   `json:"id"`
+ 	Name             string   `json:"name,omitempty"`
+@@ -136,6 +138,7 @@ type settingsMemoryUpdate struct {
+ 	Enabled *bool `json:"enabled"`
+ }
+ type settingsModelUpdate struct {
++	Supports1M       *bool     `json:"supports1M,omitempty"`
+ 	Provider         string    `json:"provider,omitempty"`
+ 	ID               string    `json:"id"`
+ 	Name             *string   `json:"name,omitempty"`
+@@ -153,6 +156,7 @@ type settingsModelUpdate struct {
+ 	Vision          *bool     `json:"vision,omitempty"`
+ }
+ type settingsProviderUpdate struct {
++	Enabled                *bool                 `json:"enabled,omitempty"`
+ 	CacheCapabilities      *ai.CacheCapabilities `json:"cacheCapabilities,omitempty"`
+ 	CacheSessionAffinity   *bool                 `json:"cacheSessionAffinity,omitempty"`
+ 	CacheControlFormat     *string               `json:"cacheControlFormat,omitempty"`
+@@ -221,7 +225,7 @@ func projectSettings(cfg *config.Config) settingsProjection {
+ 	}
+ 	for _, id := range cfg.OrderedProviderIDs() {
+ 		p := cfg.Providers[id]
+-		pv := settingsProvider{ID: id, Name: p.Name, Type: p.Type, API: p.API, BaseURL: publicBaseURL(p.BaseURL), IsFullURL: p.IsFullURL, ModelsURL: publicModelsURL(p.ModelsURL), APIKeyConfigured: p.APIKey != "", CustomHeaders: publicHeaders(p.CustomHeaders), ModelOrder: slices.Clone(p.ModelOrder), ActiveModels: slices.Clone(p.ActiveModels), RequestFormat: p.RequestFormat, Reasoning: p.Reasoning, PromptCachingEnabled: p.PromptCachingEnabled, PromptCacheHintMode: p.PromptCacheHintMode, PromptCacheRetention: p.PromptCacheRetention, NativeWebSearchEnabled: p.NativeWebSearchEnabled, UseSystemProxy: p.UseSystemProxy, RetryPolicy: p.RetryPolicy, UsageQuery: publicMetadata(p.UsageQuery), Metadata: publicMetadata(p.Metadata), Models: []settingsModel{}}
++		pv := settingsProvider{Enabled: p.IsEnabled(), ID: id, Name: p.Name, Type: p.Type, API: p.API, BaseURL: publicBaseURL(p.BaseURL), IsFullURL: p.IsFullURL, ModelsURL: publicModelsURL(p.ModelsURL), APIKeyConfigured: p.APIKey != "", CustomHeaders: publicHeaders(p.CustomHeaders), ModelOrder: slices.Clone(p.ModelOrder), ActiveModels: slices.Clone(p.ActiveModels), RequestFormat: p.RequestFormat, Reasoning: p.Reasoning, PromptCachingEnabled: p.PromptCachingEnabled, PromptCacheHintMode: p.PromptCacheHintMode, PromptCacheRetention: p.PromptCacheRetention, NativeWebSearchEnabled: p.NativeWebSearchEnabled, UseSystemProxy: p.UseSystemProxy, RetryPolicy: p.RetryPolicy, UsageQuery: publicMetadata(p.UsageQuery), Metadata: publicMetadata(p.Metadata), Models: []settingsModel{}}
+ 		pv.CacheCapabilities, pv.CacheSessionAffinity, pv.CacheControlFormat = p.CacheCapabilities, p.CacheSessionAffinity, p.CacheControlFormat
+ 		pv.NativeWebSearchSupported = ai.APISupportsNativeWebSearch(p.API, p.BaseURL)
+ 		for modelID, shared := range cfg.Models {
+@@ -229,7 +233,7 @@ func projectSettings(cfg *config.Config) settingsProjection {
+ 				continue
+ 			}
+ 			m := shared.ForProvider(id)
+-			mv := settingsModel{Provider: id, ID: modelID, Name: m.Name, DisplayName: m.DisplayName, OwnedBy: m.OwnedBy, LimitsSource: m.LimitsSource, ContextWindow: m.Context, MaxOutputTokens: m.MaxOut, MaxOutputToken: m.MaxOut, InputModalities: slices.Clone(m.InputModalities), OutputModalities: slices.Clone(m.OutputModalities), ImageAdapter: m.ImageAdapter, Vision: m.Vision}
++			mv := settingsModel{Supports1M: m.Supports1M, Provider: id, ID: modelID, Name: m.Name, DisplayName: m.DisplayName, OwnedBy: m.OwnedBy, LimitsSource: m.LimitsSource, ContextWindow: m.ContextWindow(), MaxOutputTokens: m.MaxOut, MaxOutputToken: m.MaxOut, InputModalities: slices.Clone(m.InputModalities), OutputModalities: slices.Clone(m.OutputModalities), ImageAdapter: m.ImageAdapter, Vision: m.Vision}
+ 			_, mv.ImageModel = imageModelAdapter(p, modelID, m)
+ 			// Provider settings must expose disabled models so editing and saving a
+ 			// provider cannot delete them. The top-level catalog remains active-only.
+@@ -444,6 +448,9 @@ func applySettings(cfg *config.Config, update settingsUpdate) error {
+ 				if item.LimitsSource != nil {
+ 					m.LimitsSource = *item.LimitsSource
+ 				}
++				if item.Supports1M != nil {
++					m.Supports1M = *item.Supports1M
++				}
+ 				if item.ContextWindow != nil {
+ 					if *item.ContextWindow < 0 {
+ 						return fmt.Errorf("context window must be non-negative")
+diff --git a/internal/backend/settings_provider.go b/internal/backend/settings_provider.go
+index 036c6ce..cc0d22e 100644
+--- a/internal/backend/settings_provider.go
++++ b/internal/backend/settings_provider.go
+@@ -128,6 +128,10 @@ func resolveEditedURL(stored, edited string, project func(string) string) string
+ }
+ 
+ func updateProvider(p config.Provider, in settingsProviderUpdate) (config.Provider, error) {
++	if in.Enabled != nil {
++		enabled := *in.Enabled
++		p.Enabled = &enabled
++	}
+ 	if in.CacheCapabilities != nil {
+ 		if err := in.CacheCapabilities.Validate(); err != nil {
+ 			return p, err
+@@ -355,6 +359,7 @@ func (s *Server) handleProviderModels(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+ 	defer cancel()
++	p.Enabled = nil // Explicit settings discovery is allowed for a disabled provider.
+ 	client, err := routing.ClientForProviderContext(ctx, p, id, 1)
+ 	if err != nil {
+ 		writeJSONError(w, 400, "provider credentials or endpoint are not configured")
+diff --git a/internal/backend/text.go b/internal/backend/text.go
+index 35831f0..54188eb 100644
+--- a/internal/backend/text.go
++++ b/internal/backend/text.go
+@@ -82,7 +82,7 @@ func (s *Server) knownModel(selected protocol.ModelRef) bool {
+ 		if cfg == nil {
+ 			return false
+ 		}
+-		if _, ok := cfg.Providers[selected.Provider]; !ok {
++		if provider, ok := cfg.Providers[selected.Provider]; !ok || !provider.ModelActive(selected.Model) {
+ 			return false
+ 		}
+ 		model, ok := cfg.Models[selected.Model]
+diff --git a/internal/config/config.go b/internal/config/config.go
+index 0135f9a..77b7221 100644
+--- a/internal/config/config.go
++++ b/internal/config/config.go
+@@ -18,6 +18,7 @@ import (
+ )
+ 
+ type Provider struct {
++	Enabled                *bool                `json:"enabled,omitempty"`
+ 	Name                   string               `json:"name,omitempty"`
+ 	Type                   string               `json:"type,omitempty"`
+ 	BaseURL                string               `json:"baseUrl"`
+@@ -51,6 +52,7 @@ type CustomHeader struct {
+ }
+ 
+ type PiModel struct {
++	Supports1M       bool     `json:"supports1M,omitempty"`
+ 	ID               string   `json:"id"`
+ 	Name             string   `json:"name,omitempty"`
+ 	DisplayName      string   `json:"displayName,omitempty"`
+@@ -68,8 +70,11 @@ type PiModel struct {
+ 	SamplingParams  *SamplingParams `json:"samplingParams,omitempty"`
+ }
+ 
++// Missing enabled preserves existing providers.
++func (p Provider) IsEnabled() bool { return p.Enabled == nil || *p.Enabled }
++
+ func (p Provider) ModelActive(id string) bool {
+-	return p.ActiveModels == nil || slices.Contains(p.ActiveModels, id)
++	return p.IsEnabled() && (p.ActiveModels == nil || slices.Contains(p.ActiveModels, id))
+ }
+ 
+ func (p Provider) Key() string {
+@@ -93,6 +98,7 @@ func (p Provider) ResolveKeyContext(ctx context.Context) (string, error) {
+ }
+ 
+ type Model struct {
++	Supports1M       bool     `json:"supports1M,omitempty"`
+ 	Name             string   `json:"name,omitempty"`
+ 	DisplayName      string   `json:"displayName,omitempty"`
+ 	OwnedBy          string   `json:"ownedBy,omitempty"`
+@@ -123,6 +129,9 @@ type SamplingParams struct {
+ }
+ 
+ func (m Model) ContextWindow() int {
++	if m.Supports1M {
++		return max(m.Context, 1_000_000)
++	}
+ 	return m.Context
+ }
+ 
+@@ -786,6 +795,9 @@ func (c *Config) Resolve(model, provider string) (Provider, Model, string, error
+ 	if !ok {
+ 		return Provider{}, Model{}, "", fmt.Errorf("unknown provider %q (providers: %s)", provider, keys(c.Providers))
+ 	}
++	if !p.IsEnabled() {
++		return Provider{}, Model{}, "", fmt.Errorf("provider %q is disabled", provider)
++	}
+ 	id := m.ID
+ 	if id == "" {
+ 		id = model
+@@ -812,7 +824,7 @@ func (c *Config) resolveFromCatalog(model, provider string) (Model, string, erro
+ 		if provider != "" && name != provider {
+ 			continue
+ 		}
+-		if _, ok := c.Providers[name]; !ok {
++		if p, ok := c.Providers[name]; !ok || !p.IsEnabled() {
+ 			continue
+ 		}
+ 		if mi := cat.Find(model); mi != nil {
+diff --git a/internal/config/model_overrides.go b/internal/config/model_overrides.go
+index 1ee2265..1724045 100644
+--- a/internal/config/model_overrides.go
++++ b/internal/config/model_overrides.go
+@@ -18,7 +18,7 @@ const modelOverridesMetadataKey = "kbrainModelMetadataOverrides"
+ 
+ func piModelFor(id string, model Model) PiModel {
+ 	pm := PiModel{
+-		ID: id, Name: model.Name, DisplayName: model.DisplayName, OwnedBy: model.OwnedBy,
++		Supports1M: model.Supports1M, ID: id, Name: model.Name, DisplayName: model.DisplayName, OwnedBy: model.OwnedBy,
+ 		LimitsSource: model.LimitsSource, InputModalities: model.InputModalities, OutputModalities: model.OutputModalities, ImageAdapter: model.ImageAdapter,
+ 		ContextWindow: model.ContextWindow(), MaxTokens: model.MaxOut, SamplingParams: model.SamplingParams,
+ 	}
+@@ -30,7 +30,7 @@ func piModelFor(id string, model Model) PiModel {
+ 
+ func metadataFromPiModel(pm PiModel) Model {
+ 	return Model{
+-		Name: pm.Name, DisplayName: pm.DisplayName, OwnedBy: pm.OwnedBy, LimitsSource: pm.LimitsSource,
++		Supports1M: pm.Supports1M, Name: pm.Name, DisplayName: pm.DisplayName, OwnedBy: pm.OwnedBy, LimitsSource: pm.LimitsSource,
+ 		InputModalities: pm.InputModalities, OutputModalities: pm.OutputModalities, ImageAdapter: pm.ImageAdapter, Context: pm.ContextWindow, MaxOut: pm.MaxTokens,
+ 		Vision:         slices.Contains(pm.Input, "image") || slices.Contains(pm.InputModalities, "image"),
+ 		SamplingParams: pm.SamplingParams,
+diff --git a/internal/config/openagent_provider_controls_test.go b/internal/config/openagent_provider_controls_test.go
+new file mode 100644
+index 0000000..3b02e7a
+--- /dev/null
++++ b/internal/config/openagent_provider_controls_test.go
+@@ -0,0 +1,61 @@
++package config
++
++import (
++	"encoding/json"
++	"testing"
++)
++
++func TestOpenAgentProviderEnabledDefaults(t *testing.T) {
++	for _, tc := range []struct {
++		raw     string
++		enabled bool
++	}{{`{}`, true}, {`{"enabled":true}`, true}, {`{"enabled":false}`, false}} {
++		var p Provider
++		if err := json.Unmarshal([]byte(tc.raw), &p); err != nil {
++			t.Fatal(err)
++		}
++		if p.IsEnabled() != tc.enabled || p.ModelActive("model") != tc.enabled {
++			t.Fatalf("enabled state for %s", tc.raw)
++		}
++	}
++}
++func TestOpenAgentProviderControlsPersistIndependently(t *testing.T) {
++	t.Setenv("K_BRAIN_HOME", t.TempDir())
++	disabled := false
++	m := Model{ID: "shared", Providers: []string{"a", "b"}, Context: 200000, MaxOut: 8192}
++	a := m
++	a.Supports1M = true
++	a.LimitsSource = "user"
++	m.SetProviderMetadata("a", a)
++	cfg := &Config{Providers: map[string]Provider{
++		"a": {Enabled: &disabled, API: "anthropic-messages", APIKey: "fixture-only", ActiveModels: []string{"shared"}},
++		"b": {API: "anthropic-messages", ActiveModels: []string{"shared"}},
++	}, Models: map[string]Model{"shared": m}}
++	if err := cfg.Save(); err != nil {
++		t.Fatal(err)
++	}
++	loaded, err := Load()
++	if err != nil {
++		t.Fatal(err)
++	}
++	if loaded.Providers["a"].IsEnabled() || !loaded.Providers["b"].IsEnabled() {
++		t.Fatal("provider state lost")
++	}
++	if loaded.Providers["a"].APIKey != "fixture-only" || len(loaded.Providers["a"].ActiveModels) != 1 {
++		t.Fatal("disabled configuration lost")
++	}
++	ma, mb := loaded.Models["shared"].ForProvider("a"), loaded.Models["shared"].ForProvider("b")
++	if !ma.Supports1M || ma.ContextWindow() != 1000000 || mb.Supports1M || mb.ContextWindow() != 200000 {
++		t.Fatalf("overrides leaked: %v / %v", ma, mb)
++	}
++	if _, _, _, err := loaded.Resolve("shared", "a"); err == nil {
++		t.Fatal("disabled provider resolved")
++	}
++	enabled := true
++	p := loaded.Providers["a"]
++	p.Enabled = &enabled
++	loaded.Providers["a"] = p
++	if _, model, _, err := loaded.Resolve("shared", "a"); err != nil || !model.Supports1M {
++		t.Fatalf("reenabled route: %v", err)
++	}
++}
+diff --git a/internal/routing/catalog.go b/internal/routing/catalog.go
+index 3b71f99..5ca8bfa 100644
+--- a/internal/routing/catalog.go
++++ b/internal/routing/catalog.go
+@@ -39,7 +39,7 @@ func RefreshCatalogsContext(parent context.Context, cfg *config.Config, force bo
+ 		if parent.Err() != nil {
+ 			break
+ 		}
+-		if strings.TrimSpace(prov.BaseURL) == "" {
++		if !prov.IsEnabled() || strings.TrimSpace(prov.BaseURL) == "" {
+ 			continue
+ 		}
+ 		if c, ok := cats[name]; ok && !force && !c.Stale() && c.BaseURL == prov.BaseURL {
+diff --git a/internal/routing/client.go b/internal/routing/client.go
+index b45a9f0..175f6cb 100644
+--- a/internal/routing/client.go
++++ b/internal/routing/client.go
+@@ -14,6 +14,9 @@ func ClientForProvider(prov config.Provider, name string, maxRetries int) (ai.Cl
+ }
+ 
+ func ClientForProviderContext(ctx context.Context, prov config.Provider, name string, maxRetries int) (ai.Client, error) {
++	if !prov.IsEnabled() {
++		return nil, fmt.Errorf("provider %q is disabled", name)
++	}
+ 	if err := ctx.Err(); err != nil {
+ 		return nil, err
+ 	}
+@@ -65,6 +68,9 @@ func ClientForProviderOptional(prov config.Provider, name string, maxRetries int
+ }
+ 
+ func ClientForProviderOptionalContext(ctx context.Context, prov config.Provider, name string, maxRetries int) (ai.Client, error) {
++	if !prov.IsEnabled() {
++		return nil, fmt.Errorf("provider %q is disabled", name)
++	}
+ 	if err := ctx.Err(); err != nil {
+ 		return nil, err
+ 	}
+diff --git a/internal/routing/failover_route.go b/internal/routing/failover_route.go
+index d72404d..8b5d2ce 100644
+--- a/internal/routing/failover_route.go
++++ b/internal/routing/failover_route.go
+@@ -46,7 +46,7 @@ func ResolveFailoverRouteContext(ctx context.Context, cfg *config.Config, modelN
+ 		if !ok || providerVendor(name, provider) != primaryVendor {
+ 			continue
+ 		}
+-		if provider.ActiveModels != nil && !containsModel(provider.ActiveModels, apiID) {
++		if !provider.ModelActive(apiID) {
+ 			continue
+ 		}
+ 		candidateModel := model
+@@ -75,6 +75,7 @@ func ResolveFailoverRouteContext(ctx context.Context, cfg *config.Config, modelN
+ 			lastErr = settingsErr
+ 			continue
+ 		}
++		provider = providerForModel(provider, candidateModel)
+ 		var client ai.Client
+ 		if optional {
+ 			client, err = ClientForProviderOptionalContext(ctx, provider, name, 0)
+diff --git a/internal/routing/openagent_context.go b/internal/routing/openagent_context.go
+new file mode 100644
+index 0000000..88a67c0
+--- /dev/null
++++ b/internal/routing/openagent_context.go
+@@ -0,0 +1,38 @@
++package routing
++
++import (
++	"strings"
++
++	"github.com/Stack-Cairn/K-brain/internal/ai"
++	"github.com/Stack-Cairn/K-brain/internal/config"
++)
++
++// Model-scoped opt-in for Anthropic-compatible relays that require the long
++// context beta. Never mutate the stored headers or rename the requested model.
++func providerForModel(prov config.Provider, model config.Model) config.Provider {
++	if !model.Supports1M || !(prov.API == ai.APIMessages || (prov.API == "" && prov.Type == "claude_code")) {
++		return prov
++	}
++	const beta = "context-1m-2025-08-07"
++	headers := make([]config.CustomHeader, 0, len(prov.CustomHeaders)+1)
++	tokens := []string{}
++	seen := map[string]bool{}
++	for _, header := range prov.CustomHeaders {
++		if !strings.EqualFold(header.Key, "anthropic-beta") {
++			headers = append(headers, header)
++			continue
++		}
++		for _, token := range strings.Split(header.Value, ",") {
++			token = strings.TrimSpace(token)
++			if token != "" && !seen[token] {
++				tokens = append(tokens, token)
++				seen[token] = true
++			}
++		}
++	}
++	if !seen[beta] {
++		tokens = append(tokens, beta)
++	}
++	prov.CustomHeaders = append(headers, config.CustomHeader{Key: "anthropic-beta", Value: strings.Join(tokens, ",")})
++	return prov
++}
+diff --git a/internal/routing/openagent_provider_controls_test.go b/internal/routing/openagent_provider_controls_test.go
+new file mode 100644
+index 0000000..8dca3a7
+--- /dev/null
++++ b/internal/routing/openagent_provider_controls_test.go
+@@ -0,0 +1,131 @@
++package routing
++
++import (
++	"encoding/json"
++	"fmt"
++	"github.com/Stack-Cairn/K-brain/internal/ai"
++	"github.com/Stack-Cairn/K-brain/internal/config"
++	"net/http"
++	"net/http/httptest"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func TestOpenAgentLongContextWireRequest(t *testing.T) {
++	t.Setenv("K_BRAIN_HOME", t.TempDir())
++	for _, optIn := range []bool{false, true} {
++		for _, failover := range []bool{false, true} {
++			t.Run(fmt.Sprintf("optIn=%v/failover=%v", optIn, failover), func(t *testing.T) {
++				requests := make(chan string, 2)
++				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++					var body struct {
++						Model string `json:"model"`
++					}
++					if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
++						t.Error(err)
++					}
++					if body.Model != "claude-opus-5.5" {
++						t.Errorf("model ID changed: %q", body.Model)
++					}
++					requests <- r.Header.Get("anthropic-beta")
++					w.Header().Set("Content-Type", "text/event-stream")
++					fmt.Fprint(w, "data: {\"type\":\"message_start\",\"message\":{}}\n\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"ok\"}}\n\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"}}\n\ndata: {\"type\":\"message_stop\"}\n\n")
++				}))
++				defer server.Close()
++				headers := []config.CustomHeader{{Key: "Anthropic-Beta", Value: "existing-beta"}, {Key: "X-Trace", Value: "keep"}}
++				cfg := &config.Config{DefaultModel: "claude-opus-5.5", DefaultProvider: "p", Providers: map[string]config.Provider{
++					"p": {API: ai.APIMessages, Type: "claude_code", BaseURL: server.URL, APIKey: "fixture-only", CustomHeaders: headers},
++				}, Models: map[string]config.Model{"claude-opus-5.5": {Providers: []string{"p"}, Context: 200000, MaxOut: 1024, Supports1M: optIn}}}
++				route, err := ResolveRoute(cfg, "", "", false)
++				if failover {
++					route, err = ResolveFailoverRouteContext(t.Context(), cfg, "", "", false)
++				}
++				if err != nil {
++					t.Fatal(err)
++				}
++				if optIn && route.ContextLimit != 1000000 {
++					t.Fatalf("context limit %d", route.ContextLimit)
++				}
++				if _, _, err = route.Client.Stream(t.Context(), ai.Request{Model: route.APIModel, MaxTokens: 1024}, nil, nil, nil); err != nil {
++					t.Fatal(err)
++				}
++				got := <-requests
++				if !strings.Contains(got, "existing-beta") || strings.Contains(got, "context-1m-2025-08-07") != optIn {
++					t.Fatalf("beta header %q", got)
++				}
++				if !reflect.DeepEqual(headers, cfg.Providers["p"].CustomHeaders) || headers[0].Value != "existing-beta" {
++					t.Fatal("stored headers mutated")
++				}
++			})
++		}
++	}
++}
++func TestOpenAgentLongContextHeaderMerging(t *testing.T) {
++	p := config.Provider{API: ai.APIMessages, CustomHeaders: []config.CustomHeader{
++		{Key: "Anthropic-Beta", Value: "other, context-1m-2025-08-07"}, {Key: "anthropic-beta", Value: "other, next"}, {Key: "X-Trace", Value: "keep"},
++	}}
++	got := providerForModel(p, config.Model{Supports1M: true})
++	if len(got.CustomHeaders) != 2 || got.CustomHeaders[1].Value != "other,context-1m-2025-08-07,next" {
++		t.Fatalf("header merge: %v", got.CustomHeaders)
++	}
++	p.API = ai.APIChatCompletions
++	if got := providerForModel(p, config.Model{Supports1M: true}); !reflect.DeepEqual(got, p) {
++		t.Fatal("Anthropic opt-in sent to OpenAI API")
++	}
++}
++func TestOpenAgentDisabledProviderRoutesAndFailover(t *testing.T) {
++	t.Setenv("K_BRAIN_HOME", t.TempDir())
++	disabled := false
++	cfg := &config.Config{Providers: map[string]config.Provider{
++		"on":  {API: ai.APIMessages, Type: "claude_code", BaseURL: "http://127.0.0.1:1", APIKey: "fixture-only"},
++		"off": {Enabled: &disabled, API: ai.APIMessages, Type: "claude_code", BaseURL: "http://127.0.0.1:1", APIKey: "fixture-only"},
++	}, Models: map[string]config.Model{"shared": {Providers: []string{"on", "off"}, Context: 1000000, MaxOut: 1024}}}
++	for _, optional := range []bool{false, true} {
++		if _, err := ResolveRoute(cfg, "shared", "off", optional); err == nil {
++			t.Fatal("disabled direct route accepted")
++		}
++		if _, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "off", optional); err == nil {
++			t.Fatal("disabled failover primary accepted")
++		}
++	}
++	if _, err := ClientForProvider(cfg.Providers["off"], "off", 0); err == nil {
++		t.Fatal("disabled client accepted")
++	}
++	if _, err := ClientForProviderOptional(cfg.Providers["off"], "off", 0); err == nil {
++		t.Fatal("disabled optional client accepted")
++	}
++	route, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "on", false)
++	if err != nil {
++		t.Fatal(err)
++	}
++	client := route.Client.(*FailoverClient)
++	if len(client.candidates) != 1 || client.candidates[0].name != "on" {
++		t.Fatal("disabled failover candidate")
++	}
++	p := cfg.Providers["off"]
++	p.Enabled = nil
++	cfg.Providers["off"] = p
++	m := cfg.Models["shared"]
++	mo := m
++	mo.Supports1M = true
++	m.SetProviderMetadata("off", mo)
++	cfg.Models["shared"] = m
++	route, err = ResolveFailoverRouteContext(t.Context(), cfg, "shared", "on", false)
++	if err != nil {
++		t.Fatal(err)
++	}
++	client = route.Client.(*FailoverClient)
++	if len(client.candidates) != 2 {
++		t.Fatal("reenabled provider missing")
++	}
++	for _, candidate := range client.candidates {
++		hasBeta := false
++		for _, h := range candidate.provider.CustomHeaders {
++			hasBeta = hasBeta || strings.Contains(h.Value, "context-1m-2025-08-07")
++		}
++		if hasBeta != (candidate.name == "off") {
++			t.Fatal("opt-in leaked between failover providers")
++		}
++	}
++}
+diff --git a/internal/routing/route.go b/internal/routing/route.go
+index f1bbc55..7b9401c 100644
+--- a/internal/routing/route.go
++++ b/internal/routing/route.go
+@@ -34,7 +34,7 @@ func ResolveRouteContext(ctx context.Context, cfg *config.Config, modelName, pro
+ 		return Route{}, err
+ 	}
+ 	modelName, providerName = SelectionNames(cfg, mdl, modelName, providerName)
+-	if provider := cfg.Providers[providerName]; provider.ActiveModels != nil && !containsModel(provider.ActiveModels, apiID) {
++	if provider := cfg.Providers[providerName]; !provider.ModelActive(apiID) {
+ 		return Route{}, fmt.Errorf("model %q is not active for provider %q", apiID, providerName)
+ 	}
+ 	if modelName == "" {
+@@ -43,6 +43,7 @@ func ResolveRouteContext(ctx context.Context, cfg *config.Config, modelName, pro
+ 	if providerName == "" {
+ 		return Route{}, fmt.Errorf("no provider configured for model %q", modelName)
+ 	}
++	prov = providerForModel(prov, mdl)
+ 	var client ai.Client
+ 	if optional {
+ 		client, err = ClientForProviderOptionalContext(ctx, prov, providerName, cfg.MaxRetries)

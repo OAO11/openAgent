@@ -17,6 +17,12 @@ export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> =
   "zh-CN": {
     ...CHAT_PAGE_TRANSLATIONS["zh-CN"],
     ...PROVIDER_IMPORT_TRANSLATIONS["zh-CN"],
+    "settings.providerEnabled": "已启用",
+    "settings.providerDisabled": "已停用",
+    "settings.providerEnabledHint": "停用后保留配置和密钥，后续请求与自动切换不再使用此供应商。正在进行的请求不受影响。",
+    "settings.modelSupports1M": "支持 1M",
+    "settings.modelSupports1MHint": "仅在供应商确认支持时勾选。勾选后上下文至少为 1,000,000 tokens，并为 Anthropic 兼容接口发送长上下文声明；取消勾选后可手动调整上限。",
+
     "app.loadingStalled": "本地服务长时间没有响应，设置还没有加载完成。",
     "app.restartLocalService": "重启本地服务",
     "app.restartingLocalService": "正在重启本地服务…",
@@ -401,6 +407,11 @@ export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> =
   "en-US": {
     ...CHAT_PAGE_TRANSLATIONS["en-US"],
     ...PROVIDER_IMPORT_TRANSLATIONS["en-US"],
+    "settings.providerEnabled": "Enabled",
+    "settings.providerDisabled": "Disabled",
+    "settings.providerEnabledHint": "Keep configuration and credentials, but exclude this provider from future requests and failover. In-flight requests continue.",
+    "settings.modelSupports1M": "Supports 1M",
+    "settings.modelSupports1MHint": "Enable only when supported by the provider. Sets at least 1,000,000 context tokens and sends a long-context opt-in for Anthropic-compatible APIs. After disabling, the limit can be edited manually.",
     "app.loadingStalled":
       "The local service has not answered for a while, so settings are still loading.",
     "app.restartLocalService": "Restart local service",

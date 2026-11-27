@@ -1004,9 +1004,12 @@ export function normalizeProviderModelConfig(
           ? { displayName: obj.name.trim() }
           : {}),
     ...(ownedBy ? { ownedBy } : {}),
-    contextWindow: limits.contextWindow,
+    contextWindow: obj.supports1M === true
+      ? Math.max(1_000_000, limits.contextWindow)
+      : limits.contextWindow,
     maxOutputToken: limits.maxOutputToken,
-    limitsSource,
+    limitsSource: obj.supports1M === true ? "user" : limitsSource,
+    ...(typeof obj.supports1M === "boolean" ? { supports1M: obj.supports1M } : {}),
     ...(promptCacheHintMode ? { promptCacheHintMode } : {}),
     // 用户手动的输入模态覆盖（如给未识别的多模态模型强制开启图片输入）；
     // 经 normalizeInputModalities 归一化后透传（可能过滤非法值/补齐 text/
@@ -1303,6 +1306,7 @@ export function normalizeCustomProvider(input: unknown): CustomProvider {
   return {
     id,
     name: normalizeProviderName(id, obj.name),
+    enabled: obj.enabled !== false,
     type,
     baseUrl: codexRouting
       ? codexRouting.baseUrl
@@ -1830,7 +1834,9 @@ export function normalizeSelectedModelForProviders(
     return undefined;
   }
 
-  return provider.activeModels.includes(selectedModel.model) ? selectedModel : undefined;
+  return provider.enabled !== false && provider.activeModels.includes(selectedModel.model)
+    ? selectedModel
+    : undefined;
 }
 
 export function normalizeMemorySettings(
@@ -2362,7 +2368,7 @@ export function resolvePromptClarifyModel(
     return null;
   }
   const provider = settings.customProviders.find((item) => item.id === selected.customProviderId);
-  if (!provider?.activeModels.includes(selected.model)) {
+  if (!provider || provider.enabled === false || !provider.activeModels.includes(selected.model)) {
     return null;
   }
   return { provider, model: selected.model };

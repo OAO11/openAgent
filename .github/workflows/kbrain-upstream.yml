@@ -93,7 +93,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Desktop types failed' }
           npx --yes pnpm@10.32.1 check:ui-boundaries
           if ($LASTEXITCODE -ne 0) { throw 'UI boundaries failed' }
-          node --test scripts/release/build-kbrain-source.test.mjs scripts/release/prepare-kbrain.test.mjs scripts/release/sync-kbrain-upstream.test.mjs scripts/release/verify-kbrain-packaging.test.mjs crates/agent-gui/test/providers/kbrain-subagents.test.mjs crates/agent-gui/test/chat/kbrain-health-contract.test.mjs
+          node --test scripts/release/build-kbrain-source.test.mjs scripts/release/prepare-kbrain.test.mjs scripts/release/sync-kbrain-upstream.test.mjs scripts/release/verify-kbrain-packaging.test.mjs crates/agent-gui/test/providers/kbrain-subagents.test.mjs crates/agent-gui/test/chat/kbrain-health-contract.test.mjs crates/agent-gui/test/settings/provider-controls.test.mjs crates/agent-gui/test/settings/provider-controls-modal.test.mjs crates/agent-gui/test/settings/provider-model-draft.test.mjs crates/agent-gui/test/providers/kbrain-provider-settings.test.mjs crates/agent-gui/test/chat/model-selection.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Regression tests failed' }
       - name: Build and test patched backend
         run: node scripts/release/build-kbrain-source.mjs --test

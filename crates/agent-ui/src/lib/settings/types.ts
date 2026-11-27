@@ -489,6 +489,8 @@ export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
 export type ModelInputModalitiesOverride = ["text"] | ["text", "image"];
 
 export type ProviderModelConfig = {
+  /** Explicit long-context opt-in, scoped to this provider/model. */
+  supports1M?: boolean;
   id: string;
   displayName?: string;
   /** /models 元数据；缺失时保持旧设置格式兼容。 */
@@ -671,6 +673,8 @@ export function getDefaultUsageQueryConfig(): UsageQueryConfig {
 }
 
 export type CustomProvider = {
+  /** Missing in older settings means enabled. */
+  enabled?: boolean;
   id: string;
   name: string;
   type: ProviderId;

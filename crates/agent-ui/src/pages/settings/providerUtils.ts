@@ -26,11 +26,20 @@ export function applyProviderModelDraft(
     contextWindow !== draft.contextWindow || maxOutputToken !== draft.maxOutputToken;
   const nextModel: ProviderModelConfig = {
     ...draft,
-    contextWindow,
+    contextWindow: draft.supports1M ? Math.max(contextWindow, 1_000_000) : contextWindow,
     maxOutputToken,
-    limitsSource: limitsChanged ? "user" : draft.limitsSource,
+    limitsSource: limitsChanged || draft.supports1M ? "user" : draft.limitsSource,
   };
   return models.map((model) => (model.id === draft.id ? nextModel : model));
+}
+
+export function applyModel1MContext(model: ProviderModelConfig, enabled: boolean): ProviderModelConfig {
+  return {
+    ...model,
+    supports1M: enabled,
+    contextWindow: enabled ? Math.max(model.contextWindow, 1_000_000) : model.contextWindow,
+    limitsSource: "user",
+  };
 }
 
 export type ModelInputModalitiesMode = "auto" | "text" | "text-image";

@@ -27,6 +27,7 @@ export type ModelOptionGroup<TProviderType extends string = string> = {
 
 export type ModelOptionsSettings<TProviderType extends string = string> = {
   customProviders: readonly {
+    enabled?: boolean;
     id: string;
     name: string;
     type: TProviderType;
@@ -116,6 +117,7 @@ export function buildModelOptions<TProviderType extends string>(
 ): SharedModelOption<TProviderType>[] {
   const modelOptions: SharedModelOption<TProviderType>[] = [];
   for (const provider of settings.customProviders) {
+    if (provider.enabled === false) continue;
     for (const model of provider.activeModels) {
       const configured = provider.models?.find((item) => item.id === model);
       const catalog = findCatalogModelAcrossProviders(model);

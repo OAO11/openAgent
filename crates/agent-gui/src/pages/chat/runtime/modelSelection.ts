@@ -60,10 +60,12 @@ export function resolveEffectiveChatModelSelection(params: {
         "所选供应商不存在，请重新选择模型。",
       );
     }
-    if (!provider.activeModels.includes(model)) {
+    if (provider.enabled === false || !provider.activeModels.includes(model)) {
       throw new ChatModelSelectionError(
         "model_config_model_disabled",
-        "所选模型未启用，请重新选择模型。",
+        provider.enabled === false
+          ? "所选供应商已停用，请启用供应商或重新选择模型。"
+          : "所选模型未启用，请重新选择模型。",
       );
     }
 
@@ -102,7 +104,7 @@ export function resolveEffectiveChatModelSelection(params: {
       "远程请求所选模型的供应商类型与桌面端配置不一致，请同步桌面端设置后在 WebUI 重新选择模型。",
     );
   }
-  if (!provider.activeModels.includes(model)) {
+  if (provider.enabled === false || !provider.activeModels.includes(model)) {
     throw new ChatModelSelectionError(
       "model_config_model_disabled",
       "远程请求所选模型未在桌面端启用，请同步桌面端设置后在 WebUI 重新选择模型。",

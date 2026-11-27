@@ -40,6 +40,7 @@ import {
 } from "@liveagent/ui/lib/providers/modelVendor";
 import { isGatewayWebuiRuntime } from "@liveagent/ui/lib/runtimeEnv";
 import {
+  applyModel1MContext,
   applyModelImageMode,
   applyModelInputModalitiesMode,
   applyModelsActiveState,
@@ -606,6 +607,23 @@ function useProviderModalController({
   }
 
   function commitModelsWithNewRows(nextModels: ProviderModelConfig[]) {
+    // Refresh the selected model when its draft is untouched. Keep unsaved edits.
+    const previousModels = modelsRef.current;
+    setEditingModel((draft) => {
+      if (!draft) return draft;
+      const previous = previousModels.find((model) => model.id === draft.model.id);
+      const next = nextModels.find((model) => model.id === draft.model.id);
+      if (
+        !previous || !next || draft.model !== previous ||
+        draft.contextWindow !== String(previous.contextWindow) ||
+        draft.maxOutputToken !== String(previous.maxOutputToken)
+      ) return draft;
+      return {
+        model: next,
+        contextWindow: String(next.contextWindow),
+        maxOutputToken: String(next.maxOutputToken),
+      };
+    });
     const newModelIds = findNewModelIds(modelsRef.current, nextModels);
     if (newModelIds.length === 0) {
       setModels(nextModels);
@@ -720,6 +738,20 @@ function useProviderModalController({
   const canSaveEditingModel =
     editingModelContextWindow !== null && editingModelMaxOutputToken !== null;
 
+  function setModel1M(modelId: string, enabled: boolean) {
+    const nextModels = modelsWithEditingDraft();
+    if (!nextModels) return;
+    const target = nextModels.find((model) => model.id === modelId);
+    if (!target) return;
+    const model = applyModel1MContext(target, enabled);
+    setModels(nextModels.map((item) => (item.id === modelId ? model : item)));
+    setEditingModel({
+      model,
+      contextWindow: String(model.contextWindow),
+      maxOutputToken: String(model.maxOutputToken),
+    });
+  }
+
   function setEditingModelImageMode(mode: ModelImageMode) {
     setEditingModel((prev) =>
       prev ? { ...prev, model: applyModelImageMode(prev.model, mode) } : prev,
@@ -751,7 +783,14 @@ function useProviderModalController({
     const nextModels = modelsWithEditingDraft();
     if (!nextModels) return;
     setModels(nextModels);
-    setEditingModel(null);
+    const model = nextModels.find((item) => item.id === editingModel?.model.id);
+    if (model) {
+      setEditingModel({
+        model,
+        contextWindow: String(model.contextWindow),
+        maxOutputToken: String(model.maxOutputToken),
+      });
+    }
   }
   function updateCustomHeader(index: number, field: "key" | "value", value: string) {
     setCustomHeaders((prev) =>
@@ -876,6 +915,7 @@ function useProviderModalController({
     const nextApiKey = apiKeyIsStoredValue ? "" : apiKey.trim();
     onSave({
       name: name.trim(),
+      enabled: initialData?.enabled !== false,
       type: providerType,
       baseUrl: baseUrl.trim(),
       isFullUrl,
@@ -950,6 +990,15 @@ function useProviderModalController({
     () => applyModelOrderSnapshot(models, modelDisplayOrder),
     [models, modelDisplayOrder],
   );
+  useEffect(() => {
+    if (editingModel || orderedModels.length === 0) return;
+    const model = orderedModels.find((item) => activeModels.has(item.id)) ?? orderedModels[0];
+    setEditingModel({
+      model,
+      contextWindow: String(model.contextWindow),
+      maxOutputToken: String(model.maxOutputToken),
+    });
+  }, [editingModel, orderedModels, activeModels]);
   const modelSearchQuery = modelSearch.trim().toLowerCase();
   const visibleModels = useMemo(
     () =>
@@ -1123,6 +1172,7 @@ function useProviderModalController({
     setApiKey,
     setBaseUrl,
     setEditingModel,
+    setModel1M,
     setEditingModelImageMode,
     setEditingModelInputModalitiesMode,
     setHeaderImportError,

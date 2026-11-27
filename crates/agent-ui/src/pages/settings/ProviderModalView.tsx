@@ -169,6 +169,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
     setAddingModel,
     setBaseUrl,
     setEditingModel,
+    setModel1M,
     setEditingModelImageMode,
     setEditingModelInputModalitiesMode,
     setHeaderImportError,
@@ -574,7 +575,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                               newModelPhase === "fading" && "bg-primary/[0.04]",
                             )}
                           >
-                            <div className="flex items-center gap-2 px-3 py-2 max-[720px]:grid max-[720px]:grid-cols-ssh-entry">
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1.5 px-3 py-2">
                               <div className="flex shrink-0 items-center gap-1">
                                 {dragHandle}
                                 <DialogSwitch
@@ -583,7 +584,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                                   ariaLabel={model.id}
                                 />
                               </div>
-                              <div className="min-w-0 flex-1 max-[720px]:col-[2/5] max-[720px]:row-start-1">
+                              <div className="col-start-2 row-start-1 min-w-0">
                                 <div className="flex min-w-0 items-center gap-2">
                                   <button
                                     type="button"
@@ -610,8 +611,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                               </div>
                               <div
                                 className={cn(
-                                  "flex shrink-0 items-center whitespace-nowrap text-xs tabular-nums text-muted-foreground",
-                                  "max-[720px]:col-[1/3] max-[720px]:row-start-2 max-[720px]:min-w-0",
+                                  "col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-y-1 text-xs tabular-nums text-muted-foreground",
                                 )}
                               >
                                 {modelIsImage(model) ? (
@@ -634,6 +634,14 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                                     ))}
                                   </span>
                                 ) : null}
+                                <label className="mr-3 inline-flex shrink-0 cursor-pointer items-center gap-1.5" title={t("settings.modelSupports1MHint")}>
+                                  <input type="checkbox" className="size-3.5 accent-primary"
+                                    checked={(isEditingModel ? editingModel.model.supports1M : model.supports1M) === true}
+                                    onChange={(event) => setModel1M(model.id, event.target.checked)}
+                                    aria-label={`${model.id} · ${t("settings.modelSupports1M")}`}
+                                  />
+                                  {t("settings.modelSupports1M")}
+                                </label>
                                 <span>
                                   {formatTokenCount(model.contextWindow)} ctx ·{" "}
                                   {formatTokenCount(model.maxOutputToken)} out
@@ -654,7 +662,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
-                                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive max-[720px]:col-start-4 max-[720px]:row-start-2"
+                                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive col-start-3 row-span-2 row-start-1"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   removeModel(model.id);
@@ -688,6 +696,7 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                   </div>
                   {editingModel ? (
                     <div className="space-y-4">
+                      <p className="text-xs leading-5 text-muted-foreground">{t("settings.modelSupports1MHint")}</p>
                       <div className="grid grid-cols-1 gap-4">
                         <FormField>
                           <FormFieldLabel htmlFor="model-context-window">

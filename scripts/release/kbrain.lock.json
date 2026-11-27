@@ -111,6 +111,10 @@
     {
       "file": "openagent-roles.patch",
       "sha256": "2e35a6ed2c12a8851e5f4970cc2e0c5518af1496c2be5a8a00607797de3b70b2"
+    },
+    {
+      "file": "openagent-provider-controls.patch",
+      "sha256": "9478323abc55761488d60f9a853e6c8520358814fe32c385a73f903efc875059"
     }
   ]
 }

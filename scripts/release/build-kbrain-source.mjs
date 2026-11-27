@@ -36,7 +36,7 @@ export async function buildSource(options = {}) {
       // Linux /proc shell fixtures through Windows' optional WSL bash.
       run("go", ["test", "./internal/permissions", "-run", "^(TestSystemPathAliases|TestPathRuleMatchesMacOSPrivateSpelling)$"], { cwd: source, env, stdio: "inherit" });
       run("go", ["test", "./internal/protocol"], { cwd: source, env, stdio: "inherit" });
-      run("go", ["test", "./internal/agent", "./internal/backend", "./internal/resources", "./internal/prompts", "./internal/skills", "-run", "OpenAgent"], { cwd: source, env, stdio: "inherit" });
+      run("go", ["test", "./internal/config", "./internal/routing", "./internal/agent", "./internal/backend", "./internal/resources", "./internal/prompts", "./internal/skills", "-run", "OpenAgent"], { cwd: source, env, stdio: "inherit" });
     }
     const sha256 = {};
     for (const [kind, command] of [["backend", "./cmd/kn"], ["computer", "./cmd/k-brain-computer"]]) {

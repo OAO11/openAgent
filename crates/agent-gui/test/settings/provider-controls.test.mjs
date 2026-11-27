@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createTsModuleLoader } from "../helpers/load-ts-module.mjs";
+const loader = createTsModuleLoader();
+const settings = loader.loadModule("src/lib/settings/index.ts");
+const { buildModelOptions } = loader.loadModule("@liveagent/ui/lib/models/modelOptions.ts");
+const { applyModel1MContext, applyProviderModelDraft, mergeFetchedModels } = loader.loadModule("@liveagent/ui/pages/settings/providerUtils.ts");
+const { customProviderFromKBrain, kBrainSettingsUpdateFromAppSettings } = loader.loadModule("src/lib/kbrain/providerSettings.ts");
+const { resolveEffectiveChatModelSelection } = loader.loadModule("src/pages/chat/runtime/modelSelection.ts");
+const model = { id: "shared", contextWindow: 200000, maxOutputToken: 8192, limitsSource: "provider" };
+const provider = { id: "a", name: "A", type: "claude_code", baseUrl: "https://fixture.invalid", apiKey: "", apiKeyConfigured: true, models: [model], activeModels: [model.id] };
+
+test("disabled providers keep configuration, leave model choices and reject stale conversation selections", () => {
+ const initial = settings.normalizeSettings({ customProviders: [provider], selectedModel: { customProviderId: "a", model: "shared" } });
+ assert.equal(initial.customProviders[0].enabled, true);
+ assert.equal(buildModelOptions(initial).length, 1);
+ const disabled = settings.normalizeSettings({ ...initial, customProviders: [{ ...initial.customProviders[0], enabled: false }] });
+ assert.equal(disabled.customProviders[0].models.length, 1);
+ assert.equal(disabled.customProviders[0].activeModels[0], "shared");
+ assert.equal(disabled.customProviders[0].apiKeyConfigured, true);
+ assert.equal(buildModelOptions(disabled).length, 0);
+ assert.equal(disabled.selectedModel, undefined);
+ assert.throws(() => resolveEffectiveChatModelSelection({ settings: disabled, conversationSelectedModel: initial.selectedModel }), /供应商已停用/);
+ const enabled = settings.normalizeSettings({ ...disabled, customProviders: [{ ...disabled.customProviders[0], enabled: true }] });
+ assert.equal(buildModelOptions(enabled).length, 1);
+});
+
+test("1M opt-in persists across normalization, model discovery and backend settings without resending credentials", () => {
+ const long = applyModel1MContext(model, true);
+ assert.equal(long.contextWindow, 1000000);
+ assert.equal(long.limitsSource, "user");
+ const initial = settings.normalizeSettings({ customProviders: [provider] });
+ const next = settings.normalizeSettings({ customProviders: [{ ...provider, enabled: false, models: [long] }, { ...provider, id: "b" }] });
+ const update = kBrainSettingsUpdateFromAppSettings(initial, next);
+ assert.equal(update.providers[0].enabled, false);
+ assert.equal(update.providers[0].models[0].supports1M, true);
+ assert.equal(update.providers[0].models[0].contextWindow, 1000000);
+ assert.equal("apiKey" in update.providers[0], false);
+ const loaded = customProviderFromKBrain({ ...update.providers[0], apiKeyConfigured: true });
+ assert.equal(loaded.enabled, false);
+ assert.equal(loaded.models[0].supports1M, true);
+ assert.equal(next.customProviders[1].models[0].supports1M, undefined);
+ const refreshed = mergeFetchedModels([{ ...model, contextWindow: 160000, maxOutputTokens: 4096 }], loaded.models);
+ assert.equal(refreshed[0].supports1M, true);
+ assert.equal(refreshed[0].contextWindow, 1000000);
+ const draft = applyProviderModelDraft([long], long, 200000, 4096);
+ assert.equal(draft[0].contextWindow, 1000000);
+ const off = applyModel1MContext(long, false);
+ assert.equal(off.supports1M, false);
+ assert.equal(applyProviderModelDraft([off], off, 200000, 4096)[0].contextWindow, 200000);
+ assert.equal(applyModel1MContext({ ...model, contextWindow: 2000000 }, true).contextWindow, 2000000);
+});
