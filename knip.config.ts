@@ -11,10 +11,6 @@
 //     sources as entries whose exports never count as unused. Other path
 //     strings in tests (source assertions through readFileSync) still make
 //     the file an entry; keys of a loader's `mocks` map do not.
-//   - shared UI code imports `@liveagent/app/*` and `@liveagent/adapters/*`,
-//     which tsconfig resolves to the desktop app while the Gateway WebUI's
-//     Vite config points them at its own src/ — so the WebUI copies are
-//     entries.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { appendLoaderImports, LOAD_MODULE_CALL } from "./scripts/knip-loader-imports.mjs";
@@ -24,7 +20,6 @@ const root = __dirname;
 const WORKSPACES = {
   gui: "crates/agent-gui",
   ui: "crates/agent-ui",
-  webui: "crates/agent-gateway/web",
   virtualCore: "crates/virtual-core",
 } as const;
 
@@ -58,21 +53,12 @@ const GUI_PREFIXES: Array<[string, string]> = [
   ["@liveagent/adapters/", `${WORKSPACES.gui}/src/agent-ui-adapters/`],
   ["src/", `${WORKSPACES.gui}/src/`],
 ];
-const WEBUI_PREFIXES: Array<[string, string]> = [
-  ["@liveagent/ui/", `${WORKSPACES.ui}/src/`],
-  ["@liveagent/app/", `${WORKSPACES.webui}/src/`],
-  ["@liveagent/adapters/", `${WORKSPACES.webui}/src/agent-ui-adapters/`],
-  ["@/", `${WORKSPACES.webui}/src/`],
-  ["src/", `${WORKSPACES.webui}/src/`],
-];
 
 const MODULE_STRING = /["'`]((?:\.{1,2}\/|src\/|@\/|@liveagent\/(?:ui|app|adapters)\/)[^"'`\s]+)["'`]/g;
 
 /** Which loader a test uses decides how `src/` and `./` specifiers resolve. */
 function loaderSide(text: string): { prefixes: Array<[string, string]>; base: string } {
-  return /createWebModuleLoader|load-web-module/.test(text)
-    ? { prefixes: WEBUI_PREFIXES, base: WORKSPACES.webui }
-    : { prefixes: GUI_PREFIXES, base: WORKSPACES.gui };
+  return { prefixes: GUI_PREFIXES, base: WORKSPACES.gui };
 }
 
 /** knip's `mjs` compiler: see scripts/knip-loader-imports.mjs. */
@@ -121,27 +107,10 @@ function testLoadedSources(): string[] {
   };
   scan(`${WORKSPACES.gui}/test`, GUI_PREFIXES);
   scan(`${WORKSPACES.gui}/perf`, GUI_PREFIXES);
-  scan("crates/agent-gateway/test", WEBUI_PREFIXES);
-  scan(`${WORKSPACES.webui}/test`, WEBUI_PREFIXES);
   scan(`${WORKSPACES.virtualCore}/test`, []);
   return [...found];
 }
 
-/** WebUI files that shared UI code reaches through `@liveagent/app` / `@liveagent/adapters`. */
-function webuiAliasTargets(): string[] {
-  const found = new Set<string>();
-  const pattern = /["'](@liveagent\/(?:app|adapters)\/[^"']+)["']/g;
-  for (const file of walk(`${WORKSPACES.ui}/src`, (name) => /\.tsx?$/.test(name))) {
-    const text = readFileSync(path.join(root, file), "utf8");
-    for (const match of text.matchAll(pattern)) {
-      const prefix = WEBUI_PREFIXES.find(([from]) => match[1].startsWith(from));
-      if (!prefix) continue;
-      const resolved = resolveSource(prefix[1] + match[1].slice(prefix[0].length));
-      if (resolved) found.add(resolved);
-    }
-  }
-  return [...found];
-}
 
 /** Entries grouped by the workspace that owns them, relative to that workspace. */
 function entriesByWorkspace(files: string[]) {
@@ -155,23 +124,18 @@ function entriesByWorkspace(files: string[]) {
   return groups;
 }
 
-const extra = entriesByWorkspace([...testLoadedSources(), ...webuiAliasTargets()]);
+const extra = entriesByWorkspace(testLoadedSources());
 
 export default {
   compilers: { mjs: compileLoaderCalls },
-  // Generated protobuf bindings export every message type.
-  ignore: ["crates/agent-gateway/web/src/lib/proto/gen/**"],
   // unplugin-icons virtual modules.
   ignoreUnresolved: ["^~icons/"],
   // Tools the scripts call that are not npm binaries.
   ignoreBinaries: ["mise", "rustc", "tauri", "cargo", "go", "buf", "protoc", "xvfb-run", "dbus-run-session"],
   workspaces: {
     ".": {
-      entry: ["scripts/**/*.mjs", "crates/agent-gateway/test/**/*.{mjs,js}"],
-      project: ["scripts/**/*.mjs", "crates/agent-gateway/test/**/*.{mjs,js}"],
-      // Gateway WebUI tests run from crates/agent-gateway/web and resolve
-      // their packages there.
-      ignoreDependencies: ["katex", "jsdom"],
+      entry: ["scripts/**/*.mjs"],
+      project: ["scripts/**/*.mjs"],
     },
     [WORKSPACES.gui]: {
       entry: [
@@ -200,17 +164,6 @@ export default {
       includeEntryExports: true,
       entry: ["src/**/*.test.mjs", ...(extra[WORKSPACES.ui] ?? [])],
       project: ["src/**/*.{ts,tsx}", "src/**/*.test.mjs", "build/**/*.ts"],
-    },
-    [WORKSPACES.webui]: {
-      entry: [
-        "src/main.tsx",
-        "src/shims/*.ts",
-        "test/**/*.{mjs,js}",
-        ...(extra[WORKSPACES.webui] ?? []),
-      ],
-      project: ["src/**/*.{ts,tsx}", "test/**/*.{mjs,js}"],
-      // protoc-gen-es: invoked by `buf generate` (buf.gen.yaml).
-      ignoreDependencies: ["@bufbuild/protoc-gen-es", "@svgr/core", "@svgr/plugin-jsx"],
     },
     [WORKSPACES.virtualCore]: {
       entry: ["src/index.ts", ...(extra[WORKSPACES.virtualCore] ?? [])],

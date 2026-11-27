@@ -32,23 +32,3 @@ test("empty image targets do not point to the removed provider settings option",
     assert.doesNotMatch(container.textContent, /供应商设置|图像服务/);
   } finally { await env.act(async () => root.unmount()); env.cleanup(); }
 });
-
-test("input target dialog protects an unsaved model draft before closing", async()=>{
- const env=await createDomTestEnv({mocks:{"@liveagent/ui/components/IconSet":new Proxy({},{get:()=>()=>null})}});const {ImageTargetSettings}=env.loadModule("@liveagent/ui/features/image-studio/ImageTargetSettings");
- const container=document.createElement("div");document.body.append(container);const root=env.createRoot(container);
- const button=label=>Array.from(document.querySelectorAll("button")).find(b=>b.textContent===label);
- try {
-  await env.act(async()=>root.render(env.React.createElement(ImageTargetSettings,{client:{getSettings:async()=>settings}})));
-  await env.act(async()=>button("目标设置").click());assert.ok(document.querySelector('[role="dialog"]'));
-  await env.act(async()=>button("新增目标").click());
-  const alert=()=>document.querySelector('[role="alertdialog"]');
-  await env.act(async()=>button("关闭目标设置").click());
-  assert.match(alert()?.textContent??"",/离开图像设置？/);
-  await env.act(async()=>button("继续编辑").click());
-  await new Promise(r=>setTimeout(r,200));
-  assert.equal(alert(),null);assert.ok(document.querySelector('[role="dialog"]'),"keeping the draft keeps the dialog open");
-  await env.act(async()=>button("关闭目标设置").click());
-  await env.act(async()=>button("放弃并离开").click());
-  await new Promise(r=>setTimeout(r,200));assert.equal(document.querySelector('[role="dialog"]'),null);
- }finally{await env.act(async()=>root.unmount());env.cleanup();}
-});

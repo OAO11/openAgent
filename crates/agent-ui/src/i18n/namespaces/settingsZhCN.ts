@@ -1,13 +1,5 @@
 // Chinese messages of the settings namespace (see ./settings.ts).
 export const SETTINGS_ZH_CN = {
-  "settings.hooksEventAgentStart": "任务开始",
-  "settings.hooksEventAgentEnd": "任务结束",
-  "settings.hooksEventTurnStart": "模型轮次开始",
-  "settings.hooksEventTurnEnd": "模型轮次结束",
-  "settings.hooksEventMessageStart": "消息生成开始",
-  "settings.hooksEventMessageEnd": "消息生成结束",
-  "settings.hooksEventToolExecutionStart": "工具执行开始",
-  "settings.hooksEventToolExecutionEnd": "工具执行结束",
 
   "settings.hooksNavigation": "Hooks 分类",
   "settings.hooksMine": "我的 Hooks",

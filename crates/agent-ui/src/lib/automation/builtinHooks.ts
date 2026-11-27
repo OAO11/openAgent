@@ -1,3 +1,4 @@
+import "@liveagent/ui/i18n/namespaces/settings";
 import completionSound from "./presets/completion-sound.ps1?raw";
 import projectCheck from "./presets/project-check.ps1?raw";
 import type { HookDef } from "./types";

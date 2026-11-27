@@ -21,7 +21,7 @@
 // Usage:
 //   node scripts/check-perf-micro.mjs [--repeat N] [--update] [--json out.json]
 // `--update` rewrites scripts/budgets/perf-micro-baseline.json from this run
-// (see docs/testing/ci-checks.md).
+// (see docs/OPENAGENT_DEVELOPMENT.md).
 
 import { spawnSync } from "node:child_process";
 import { appendFileSync, readFileSync, writeFileSync } from "node:fs";

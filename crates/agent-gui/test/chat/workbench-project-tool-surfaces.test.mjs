@@ -130,7 +130,7 @@ test("project tool surfaces resolve their own hard minimum sizes", () => {
 
 test("reducer opens each tool once per scope and rejects duplicates", () => {
   let layout = rootLayout();
-  for (const kind of PROJECT_TOOL_SURFACE_KINDS) {
+  for (const kind of PROJECT_TOOL_SURFACE_KINDS.filter((kind) => !["tunnel", "sshTunnel"].includes(kind))) {
     layout = mustApply(layout, {
       type: "OPEN_PANE",
       pane: toolPane(`pane-${kind}`, kind),
@@ -173,7 +173,7 @@ test("reducer opens each tool once per scope and rejects duplicates", () => {
 
   const incomplete = apply(layout, {
     type: "OPEN_PANE",
-    pane: { paneId: "pane-bad", surface: { kind: "tunnel", project: { projectId: "", projectPathKey: "" } }, view: {} },
+    pane: { paneId: "pane-bad", surface: { kind: "gitReview", project: { projectId: "", projectPathKey: "" } }, view: {} },
     target: { kind: "pane-edge", paneId: "pane-root", edge: "bottom" },
   });
   assert.equal(incomplete.ok, false);
@@ -218,17 +218,17 @@ test("commitProjectToolDrop focuses, moves, or opens by identity", () => {
       calls.push(["focus", paneId]);
     },
   });
-  const payload = { kind: "projectTool", tool: "tunnel", project: PROJECT, title: "Tunnel" };
+  const payload = { kind: "projectTool", tool: "gitReview", project: PROJECT, title: "Git review" };
 
   assert.deepEqual(
     commitProjectToolDrop(payload, { kind: "pane-edge", paneId: "pane-root", edge: "right" }, deps()),
-    { action: "opened", paneId: "pane-tunnel" },
+    { action: "opened", paneId: "pane-gitReview" },
   );
-  assert.equal(findPaneIdBySurfaceKey(layout, "tunnel:/workspace/project-main"), "pane-tunnel");
+  assert.equal(findPaneIdBySurfaceKey(layout, "gitReview:/workspace/project-main"), "pane-gitReview");
 
   assert.deepEqual(
-    commitProjectToolDrop(payload, { kind: "pane-center", paneId: "pane-tunnel" }, deps()),
-    { action: "focused", paneId: "pane-tunnel" },
+    commitProjectToolDrop(payload, { kind: "pane-center", paneId: "pane-gitReview" }, deps()),
+    { action: "focused", paneId: "pane-gitReview" },
   );
   // 落在别的 Pane 中心不是移动语义(与文件树一致):忽略。
   assert.deepEqual(
@@ -237,15 +237,15 @@ test("commitProjectToolDrop focuses, moves, or opens by identity", () => {
   );
   assert.deepEqual(
     commitProjectToolDrop(payload, { kind: "canvas-edge", edge: "bottom" }, deps()),
-    { action: "moved", paneId: "pane-tunnel" },
+    { action: "moved", paneId: "pane-gitReview" },
   );
   assert.deepEqual(commitProjectToolDrop(payload, { kind: "canvas-empty" }, deps()), {
     action: "ignored",
   });
   assert.deepEqual(calls, [
-    ["open", "tunnel", "pane-edge"],
-    ["focus", "pane-tunnel"],
-    ["move", "pane-tunnel", "canvas-edge"],
+    ["open", "gitReview", "pane-edge"],
+    ["focus", "pane-gitReview"],
+    ["move", "pane-gitReview", "canvas-edge"],
   ]);
 });
 
@@ -312,7 +312,7 @@ test("leased tools disappear from the dock tab list", () => {
   let layout = rootLayout();
   layout = mustApply(layout, {
     type: "OPEN_PANE",
-    pane: toolPane("pane-ssh", "sshTunnel"),
+    pane: toolPane("pane-files", "fileTree"),
     target: { kind: "pane-edge", paneId: "pane-root", edge: "right" },
   });
   layout = mustApply(layout, {
@@ -321,7 +321,7 @@ test("leased tools disappear from the dock tab list", () => {
     target: { kind: "pane-edge", paneId: "pane-root", edge: "bottom" },
   });
   const leased = leasedProjectToolKinds(layout, PROJECT.projectPathKey, PROJECT_TOOL_SURFACE_KINDS);
-  assert.deepEqual([...leased].sort(), ["backgroundTasks", "sshTunnel"]);
+  assert.deepEqual([...leased].sort(), ["backgroundTasks", "fileTree"]);
   // 后台任务是整窗口单例:任何项目的 dock 都视为已租用。
   assert.deepEqual(
     [...leasedProjectToolKinds(layout, OTHER_PROJECT.projectPathKey, PROJECT_TOOL_SURFACE_KINDS)],
@@ -330,7 +330,7 @@ test("leased tools disappear from the dock tab list", () => {
 
   const projectState = {
     tabOrder: [],
-    tools: { gitReview: { openedAt: 1 }, sshTunnel: { openedAt: 2 } },
+    tools: { gitReview: { openedAt: 1 }, fileTree: { openedAt: 2 } },
     backgroundTasks: { opened: true, dismissedIds: [] },
     openVersion: 0,
     stateVersion: 0,
@@ -353,26 +353,20 @@ test("leased tools disappear from the dock tab list", () => {
     projectState,
     tunnelAvailable: true,
   });
-  assert.deepEqual(unleased.map((tab) => tab.kind), ["gitReview", "sshTunnel", "backgroundTasks"]);
+  assert.deepEqual(unleased.map((tab) => tab.kind), ["fileTree", "gitReview", "backgroundTasks"]);
 });
 
-test("both hosts route project tools through the shared pane host and drop transaction", () => {
+test("the desktop routes project tools through the shared pane host and drop transaction", () => {
   const chatPage = readFileSync(new URL("../../src/pages/ChatPage.tsx", import.meta.url), "utf8");
-  const gatewayView = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/GatewayAppView.tsx", import.meta.url),
-    "utf8",
-  );
-  const gatewayWorkbench = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/workbench/useGatewayWorkbench.ts", import.meta.url),
-    "utf8",
-  );
-  for (const source of [chatPage, gatewayView]) {
+
+
+  for (const source of [chatPage]) {
     assert.match(source, /isProjectToolSurface\(surface\)/);
     assert.match(source, /<ProjectToolPaneHost/);
     assert.match(source, /leasedTools=\{leasedDockTools\}/);
     assert.equal(source.includes("FileTreePaneSurface"), false);
   }
-  for (const source of [chatPage, gatewayWorkbench]) {
+  for (const source of [chatPage]) {
     assert.match(source, /payload\.kind === "projectTool"/);
     assert.match(source, /commitProjectToolDrop\(payload, target, \{/);
     assert.match(source, /openProjectToolInSplit\(tool, project, \{/);
@@ -384,7 +378,7 @@ test("closing a tool pane closes the tool in the dock instead of handing the tab
   const key = "/workspace/app";
   const otherKey = "/workspace/other";
   let state = settings.openRightDockSingletonTab(base, key, "gitReview");
-  state = settings.openRightDockSingletonTab(state, key, "sshTunnel");
+  state = settings.openRightDockSingletonTab(state, key, "plugins");
   state = settings.updateRightDockProjectState(state, key, (current) =>
     settings.openRightDockBackgroundTasksTabState(current),
   );
@@ -392,12 +386,12 @@ test("closing a tool pane closes the tool in the dock instead of handing the tab
     settings.openRightDockBackgroundTasksTabState(current),
   );
   const before = settings.getRightDockProjectState(state.customSettings, key);
-  assert.deepEqual(Object.keys(before.tools).sort(), ["gitReview", "sshTunnel"]);
+  assert.deepEqual(Object.keys(before.tools).sort(), ["gitReview", "plugins"]);
   assert.equal(before.backgroundTasks.opened, true);
 
   const afterReview = releaseProjectToolFromDock(state, "gitReview", key);
   const reviewState = settings.getRightDockProjectState(afterReview.customSettings, key);
-  assert.deepEqual(Object.keys(reviewState.tools), ["sshTunnel"]);
+  assert.deepEqual(Object.keys(reviewState.tools), ["plugins"]);
   assert.equal(reviewState.tabOrder.includes(settings.RIGHT_DOCK_SINGLETON_TAB_IDS.gitReview), false);
   // The persisted active tab pointed at the closed tool: it is cleared so the
   // render-time fallback picks the next visible tab instead of a hidden one.
@@ -469,25 +463,29 @@ test("closing a derived background-tasks pane snapshots visible processes", () =
 
 test("project-tool workbench entry points require a stable project context", () => {
   const chatPage = readFileSync(new URL("../../src/pages/ChatPage.tsx", import.meta.url), "utf8");
-  const gatewayView = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/GatewayAppView.tsx", import.meta.url),
-    "utf8",
-  );
+
   assert.match(chatPage, /sessionWorkbench\.enabled && terminalProjectPathKey/);
-  assert.match(gatewayView, /sessionWorkbench\.enabled && terminalProjectPath\.trim\(\)/);
+
 });
 
 test("both hosts release the dock tool when its pane is closed", () => {
   const chatPage = readFileSync(new URL("../../src/pages/ChatPage.tsx", import.meta.url), "utf8");
-  const gatewayWorkbench = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/workbench/useGatewayWorkbench.ts", import.meta.url),
-    "utf8",
-  );
-  const gatewayApp = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/GatewayApp.tsx", import.meta.url),
-    "utf8",
-  );
+
+
   assert.match(chatPage, /releaseProjectToolFromDock\(prev, kind, project\.projectPathKey\)/);
-  assert.match(gatewayWorkbench, /onProjectToolPaneClosed\?\.\(pane\.surface\.kind, pane\.surface\.project\.projectPathKey\)/);
-  assert.match(gatewayApp, /releaseProjectToolFromDock\(prev, tool, projectPathKey\)/);
+
+
+});
+
+// Historical surface kinds remain readable, but cannot open remote panes.
+test("openAgent rejects retired remote surfaces", () => {
+  for (const kind of ["tunnel", "sshTunnel"]) {
+    const result = apply(rootLayout(), {
+      type: "OPEN_PANE",
+      pane: toolPane(`retired-${kind}`, kind),
+      target: { kind: "pane-edge", paneId: "pane-root", edge: "right" },
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.error.code, "unsupported-surface");
+  }
 });

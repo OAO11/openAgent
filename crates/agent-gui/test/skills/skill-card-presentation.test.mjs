@@ -8,12 +8,7 @@ const implementations = [
     label: "GUI",
     loader: createTsModuleLoader(),
   },
-  {
-    label: "WebUI",
-    loader: createTsModuleLoader({
-      rootDir: fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url)),
-    }),
-  },
+
 ];
 
 for (const { label, loader } of implementations) {

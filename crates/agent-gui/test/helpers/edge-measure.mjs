@@ -1,5 +1,5 @@
 // 真实几何：把 jsdom 渲染出的真实组件 markup 套上构建产物 CSS，在无头 Edge 里量。
-// 需要 Edge 与 crates/agent-gui/dist、crates/agent-gateway/web/dist 的构建 CSS；缺任一项时
+// 需要 Edge 与 crates/agent-gui/dist 的构建 CSS；缺任一项时
 // edgeMeasureSkip 给出跳过原因。320 = MIN_CONVERSATION_PANE_WIDTH（分屏最窄 Pane）。
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -19,9 +19,8 @@ function distCss(relDir) {
   return file ? pathToFileURL(join(dir, file)).href : null;
 }
 const GUI_CSS = distCss("agent-gui/dist/assets");
-const WEB_CSS = distCss("agent-gateway/web/dist/assets");
 
-export const edgeMeasureSkip = !EDGE || !GUI_CSS || !WEB_CSS ? "needs Edge and built dist CSS" : false;
+export const edgeMeasureSkip = !EDGE || !GUI_CSS ? "needs Edge and built dist CSS" : false;
 
 const withTimeout = (promise, ms, what) => {
   let timer;
@@ -51,7 +50,7 @@ function killBrowsersUsing(profileDir) {
 }
 
 /**
- * 一次启动 Edge，按顺序量完全部场景。pages: [{ key, surface: "desktop" | "web", width, html }]；
+ * 一次启动 Edge，按顺序量完全部场景。pages: [{ key, surface: "desktop", width, html }]；
  * expression 在页面里求值，返回可序列化的结果。返回 Map<key, 结果>。
  * 结束时发 Browser.close，DevTools 连接断开即浏览器已关；没连上或等不到时按 profile 兜底结束。
  * onClosed(browserClosed) 报告浏览器是否自己关掉，false 表示等满了超时才兜底。
@@ -99,11 +98,10 @@ export async function measureInEdge(pages, expression, onClosed) {
     const { result: attached } = await send("Target.attachToTarget", { targetId: target.targetId, flatten: true });
     const sid = attached.sessionId;
     for (const [index, page] of pages.entries()) {
-      const web = page.surface === "web";
       const file = join(dir, `page-${index}.html`);
       writeFileSync(
         file,
-        `<!doctype html><html ${web ? 'data-liveagent-webui="gateway"' : ""}><head><meta charset="utf-8"><link rel="stylesheet" href="${web ? WEB_CSS : GUI_CSS}"></head><body style="margin:0"><div class="${web ? "gateway-chat-frame" : ""}" style="position:relative;width:100vw;height:100vh">${page.html}</div></body></html>`,
+        `<!doctype html><html ><head><meta charset="utf-8"><link rel="stylesheet" href="${GUI_CSS}"></head><body style="margin:0"><div class="" style="position:relative;width:100vw;height:100vh">${page.html}</div></body></html>`,
       );
       await send("Emulation.setDeviceMetricsOverride", { width: page.width, height: 900, deviceScaleFactor: 1, mobile: false }, sid);
       const url = pathToFileURL(file).href;

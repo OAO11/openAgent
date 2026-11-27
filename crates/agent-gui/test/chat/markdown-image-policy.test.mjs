@@ -299,7 +299,7 @@ test("file links keep the browser menu when no transcript hosts the link menu", 
 test("both transcripts host the file link menu and its reveal never enters the link codec", () => {
   for (const relativePath of [
     "../../src/pages/chat/transcript/ChatTranscript.tsx",
-    "../../../agent-gateway/web/src/components/GatewayTranscript.tsx",
+
   ]) {
     const source = fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
     assert.match(source, /<ChatFileLinkContextMenuHost\b/, relativePath);

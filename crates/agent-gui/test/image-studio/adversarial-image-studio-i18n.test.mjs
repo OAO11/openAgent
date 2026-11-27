@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createWebModuleLoader } from "../../../agent-gateway/test/helpers/load-web-module.mjs";
 import { createDomTestEnv } from "../helpers/dom-test-env.mjs";
 
 // Adversarial review of the image studio i18n change. Real modules only: the settings
@@ -110,21 +109,4 @@ test("adversarial: zh-CN model-switch banner names dropped parameters in Chinese
     controller?.dispose();
     await view.close();
   }
-});
-
-// [P2] The WebUI image hub (GatewayAppView "图像工作台" + imageStudio.unavailable) formats the
-// same ImageClientError with error.message, so the codes this change translates still reach a
-// Chinese screen in English. The extra translate argument documents the expected contract and
-// is ignored by the current signature.
-test("adversarial: WebUI image hub unavailable notice localizes the image error code", async () => {
-  const web = createWebModuleLoader();
-  const { gatewayImageErrorNotice } = web.loadModule("src/agent-ui-adapters/imageStudio.ts");
-  const { ImageClientError } = web.loadModule("@liveagent/ui/lib/imaging/errors");
-  const { t } = web.loadModule("@liveagent/ui/i18n/index");
-  const zh = (key) => t(key, "zh-CN");
-  const notice = gatewayImageErrorNotice(new ImageClientError("IMAGE_UNAVAILABLE", 503), zh);
-  // Before the fix: "HTTP 503 · Image module unavailable（IMAGE_UNAVAILABLE）"
-  assert.doesNotMatch(notice, /Image module unavailable/);
-  assert.match(notice, /图像模块不可用/);
-  assert.match(notice, /IMAGE_UNAVAILABLE/, "the code stays for diagnosis");
 });

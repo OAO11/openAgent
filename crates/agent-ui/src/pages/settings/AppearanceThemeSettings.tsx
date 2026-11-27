@@ -1,3 +1,4 @@
+import "@liveagent/ui/i18n/namespaces/settings";
 import type { SettingsSectionProps } from "@liveagent/app/pages/settings/types";
 import { SettingsCombobox } from "../../components/settings/SettingsCombobox";
 import {

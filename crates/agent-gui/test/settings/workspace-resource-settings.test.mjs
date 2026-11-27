@@ -73,38 +73,17 @@ const sharedWorkspaceRemovalHook = readFileSync(
   new URL("../../../agent-ui/src/lib/useWorkspaceProjectRemoval.tsx", import.meta.url),
   "utf8",
 );
-const webGatewayApp = readFileSync(
-  new URL("../../../agent-gateway/web/src/app/GatewayApp.tsx", import.meta.url),
-  "utf8",
-);
-const webGatewayAppView = readFileSync(
-  new URL("../../../agent-gateway/web/src/app/GatewayAppView.tsx", import.meta.url),
-  "utf8",
-);
-const webRootAdapter = readFileSync(
-  new URL(
-    "../../../agent-gateway/web/src/agent-ui-adapters/workspaceProjectRoots.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
+
+
+
 const sharedWorkspaceCloneModal = readFileSync(
   new URL("../../../agent-ui/src/components/chat/WorkspaceCloneModal.tsx", import.meta.url),
   "utf8",
 );
-const webDirectoryPickerAdapter = readFileSync(
-  new URL("../../../agent-gateway/web/src/agent-ui-adapters/directoryPicker.tsx", import.meta.url),
-  "utf8",
-);
-const webRemotePathPicker = readFileSync(
-  new URL("../../../agent-gateway/web/src/components/RemotePathPickerModal.tsx", import.meta.url),
-  "utf8",
-);
+
+
 // The hook that opens the picker; the modal itself loads on demand.
-const webRemotePathPickerHook = readFileSync(
-  new URL("../../../agent-gateway/web/src/components/useRemotePathPicker.tsx", import.meta.url),
-  "utf8",
-);
+
 const sharedSkillsHub = readFileSync(
   new URL("../../../agent-ui/src/pages/skills-hub/SkillsHubPage.tsx", import.meta.url),
   "utf8",
@@ -147,15 +126,15 @@ test("workspace configuration uses one entry and one shared two-column modal", (
   assert.doesNotMatch(sharedProjectSettings, /createPortal|role="dialog"/);
   assert.match(sharedProjectSettings, /onRenameProject\?\.\(normalizedProjectName\)/);
   assert.match(guiChatPage, /onRenameProject=\{\(name\)/);
-  assert.match(webGatewayAppView, /onRenameProject=\{\(name\)/);
+
   assert.match(guiChatPage, /rootClient=\{desktopWorkspaceProjectRootClient\}/);
-  assert.match(webGatewayAppView, /rootClient=\{workspaceProjectRootClient\}/);
+
   assert.match(guiRootAdapter, /listWorkspaceRootGrants\(project\)/);
   assert.match(guiRootAdapter, /applyWorkspaceRootGrants\(/);
   assert.match(guiRootAdapter, /revoke: revokeWorkspaceRootGrants/);
-  assert.match(webRootAdapter, /api\.listWorkspaceRootGrants\(project\.id, project\.path\)/);
-  assert.match(webRootAdapter, /api\.applyWorkspaceRootGrants\(/);
-  assert.match(webRootAdapter, /api\.revokeWorkspaceRootGrants\(project\.id\)/);
+
+
+
   assert.match(sharedProjectSettings, /@liveagent\/adapters\/directoryPicker/);
   assert.match(sharedProjectSettings, /suspendsParentModal/);
   assert.match(sharedProjectSettings, /pickDirectory\(project\.path\)/);
@@ -171,21 +150,18 @@ test("workspace configuration uses one entry and one shared two-column modal", (
   assert.doesNotMatch(sharedProjectSettings, /open=\{dialogOpen && !directoryPickerActive\}/);
   assert.match(sharedWorkspaceCloneModal, /@liveagent\/adapters\/directoryPicker/);
   assert.match(sharedWorkspaceCloneModal, /\{directoryPickerElement\}/);
-  assert.match(webDirectoryPickerAdapter, /useRemotePathPicker/);
-  assert.match(webDirectoryPickerAdapter, /suspendsParentModal: true/);
+
+
   assert.doesNotMatch(sharedProjectSettings, /window\.requestAnimationFrame/);
-  assert.match(webRemotePathPickerHook, /selectedPathRef\.current = path/);
-  assert.match(webRemotePathPickerHook, /pending\.resolve\(selectedPathRef\.current\)/);
-  assert.match(webRemotePathPicker, /h-dialog-650px-vh/);
-  assert.match(webRemotePathPicker, /max-h-92vh/);
-  assert.match(webRemotePathPicker, /max-w-4xl/);
-  assert.doesNotMatch(webRemotePathPicker, /forceRender/);
-  assert.doesNotMatch(webRemotePathPicker, /overlayClassName|viewportClassName|z-\[\d+\]/);
-  assert.ok(
-    webRemotePathPickerHook.indexOf("selectedPathRef.current = path") <
-      webRemotePathPickerHook.indexOf("pending.resolve(selectedPathRef.current)"),
-  );
-  assert.doesNotMatch(webGatewayApp, /useDirectoryPicker|directoryPickerElement/);
+
+
+
+
+
+
+
+
+
   assert.match(sharedResourceTabs, /<TabsList[\s\S]*<TabsTrigger/);
   assert.match(sharedResourceCard, /ResourceActivationSwitch/);
   assert.doesNotMatch(sharedSheet, /SheetPrimitive\.Viewport|backdropClassName|portalProps/);
@@ -210,9 +186,9 @@ test("prompt templates expose global and project scopes with append or replace e
   assert.doesNotMatch(sharedProjectPromptEditor, /aria-pressed/);
   assert.doesNotMatch(sharedProjectPromptEditor, /projectPromptEffectivePreview/);
   assert.match(guiChatPage, /onConfigureProject=\{setProjectSettingsProject\}/);
-  assert.match(webGatewayAppView, /onConfigureProject=\{setProjectSettingsProject\}/);
+
   assert.doesNotMatch(guiChatPage, /onEditProjectPrompt/);
-  assert.doesNotMatch(webGatewayAppView, /onEditProjectPrompt/);
+
   assert.match(sendRuntime, /resolveConversationPromptWorkdir\(workdirResolution\)/);
   assert.match(sendRuntime, /resolveEffectivePromptSettings\(settings, promptWorkdir\)/);
   assert.match(sendRuntime, /historyCwd/);
@@ -277,13 +253,13 @@ test("chat runtime resolves and snapshots workspace resources from the effective
 test("workspace and resource deletion paths clear workspace-scoped references", () => {
   assert.match(guiWorkspaceRemoval, /useSharedWorkspaceProjectRemoval/);
   assert.match(guiWorkspaceRemoval, /revokeWorkspaceRootGrants/);
-  assert.match(webGatewayApp, /useWorkspaceProjectSettingsActions/);
-  assert.match(webGatewayApp, /useWorkspaceProjectDeletion/);
+
+
   assert.match(sharedWorkspaceRemovalHook, /useWorkspaceProjectSettingsActions/);
   assert.match(sharedWorkspaceRemovalHook, /removeWorkspaceProject/);
   assert.match(sharedWorkspaceRemoval, /await beforeRemoveWorkspaceProject\?\.\(project\)/);
   assert.match(sharedWorkspaceRemoval, /if \(project\) await removeWorkspaceProject\(project\)/);
-  assert.match(webGatewayApp, /workspaceProjectRootClient\.revoke\(project\)/);
+
   assert.match(sharedWorkspaceRemoval, /resetWorkspaceResourceSettings\(nextSettings, pathKey\)/);
   assert.match(sharedSkillsHub, /removeWorkspaceResourceReferences\(/);
   assert.match(sharedSkillsHub, /skillNames: \[skillName\]/);

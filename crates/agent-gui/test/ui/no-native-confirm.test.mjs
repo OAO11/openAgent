@@ -10,7 +10,7 @@ import { parseTypeScriptSource, walkSyntaxTree } from "../../../../scripts/types
 // in-app dialog (useConfirmDialog) instead.
 
 const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url));
-const roots = ["crates/agent-ui/src", "crates/agent-gui/src", "crates/agent-gateway/web/src"];
+const roots = ["crates/agent-ui/src", "crates/agent-gui/src"];
 const NATIVE_DIALOGS = new Set(["confirm", "alert", "prompt"]);
 const GLOBAL_OBJECTS = new Set(["window", "globalThis", "self"]);
 

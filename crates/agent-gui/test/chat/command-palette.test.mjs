@@ -309,13 +309,13 @@ test("desktop and WebUI hosts wire the palette and suppress it under settings", 
   assert.match(sidebar, /mode=\{conversationSearchMode\}/);
   for (const host of [
     "../../src/pages/ChatPage.tsx",
-    "../../../agent-gateway/web/src/app/GatewayAppView.tsx",
+
   ]) {
     const source = read(host);
     assert.match(source, /buildCommandPaletteActions\(/, host);
     assert.match(source, /getCommandPaletteActions=\{getCommandPaletteActions\}/, host);
   }
-  for (const settingsHost of ["../../src/App.tsx", "../../../agent-gateway/web/src/app/GatewayAppView.tsx"]) {
+  for (const settingsHost of ["../../src/App.tsx"]) {
     assert.match(read(settingsHost), /data-command-palette-suppressed=""/, settingsHost);
   }
 });
@@ -386,10 +386,7 @@ test("onboarding and diagnostics export are palette commands where the host wire
     const read = (relative) => fs.readFileSync(new URL(relative, import.meta.url), "utf8");
     assert.match(read("../../src/pages/ChatPage.tsx"), /onOpenOnboarding: requestOnboarding/);
     assert.match(read("../../src/pages/ChatPage.tsx"), /onExportDiagnostics: requestDiagnosticsExport/);
-    assert.match(
-      read("../../../agent-gateway/web/src/app/GatewayAppView.tsx"),
-      /onExportDiagnostics: requestDiagnosticsExport/,
-    );
+
   } finally {
     env.cleanup();
   }

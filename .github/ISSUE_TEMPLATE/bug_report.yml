@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a defect in LiveAgent. Reports missing key details may be asked to supplement before triage.
+description: Report a defect in openAgent. Reports missing key details may be asked to supplement before triage.
 title: "[Bug] "
 labels:
   - bug
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Do not report security vulnerabilities here — submit them privately via [Security Advisories](https://github.com/Stack-Cairn/LiveAgent/security/advisories/new).
+        Do not report security vulnerabilities here — submit them privately via [Security Advisories](https://github.com/OAO11/openAgent/security/advisories/new).
   - type: dropdown
     id: area
     attributes:
@@ -16,7 +16,6 @@ body:
       options:
         - Desktop UI (agent-gui / React)
         - Desktop core (Tauri / Rust)
-        - Gateway (agent-gateway / Go)
         - Agent sessions / streaming
         - Tool execution / MCP / Skills
         - Model providers
@@ -29,7 +28,7 @@ body:
     id: version
     attributes:
       label: Version or commit
-      description: Release version, Docker image tag, branch, or commit SHA.
+      description: Release version, branch, or commit SHA.
       placeholder: v0.3.2 / main@f69f24dc
     validations:
       required: true
@@ -37,7 +36,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS and version, deployment mode (desktop app / self-hosted gateway), model provider, etc.
+      description: OS and version, desktop environment, model provider, etc.
       placeholder: |
         OS: macOS 15.2 (Apple Silicon)
         Deployment: desktop app

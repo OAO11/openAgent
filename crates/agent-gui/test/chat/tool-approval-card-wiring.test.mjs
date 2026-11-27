@@ -164,28 +164,6 @@ test("an Edit approval carries its diff preview from the tool call", async (t) =
   assert.equal(JSON.stringify(listed[0]?.preview), JSON.stringify({ path: "src/a.ts", before: "const a = 1;", after: "const a = 2;", truncated: false }));
 });
 
-test("WebUI rebuilds the Edit preview from the synced call and marks a cut one", async (t) => {
-  const { pendingToolApprovalFromToolCall } = loader.loadModule("../agent-ui/src/lib/chat/toolApprovalArgs.ts");
-  const long = "x".repeat(200_000);
-  const { gatewayEvents, errors } = await runTurn(t, {
-    answers: [["approve"]],
-    events: (event) => {
-      event("tool.call", { tool_call: { id: "edit", name: "Edit", arguments: { path: "src/big.ts", old_string: "a", new_string: long } } });
-      event("permission.requested", {
-        permission_id: "permission", tool: "Edit", command: "src/big.ts", rule: "Edit(src/big.ts)", tool_call_id: "edit",
-        options: allowAlwaysOptions,
-      });
-    },
-  });
-  assert.equal(errors.length, 0, `turn failed: ${errors.join(" | ")}`);
-  const synced = gatewayEvents.find((value) => value.type === "tool_call" && value.id === "edit" && value.arguments?.__toolApprovalPending === true);
-  assert.equal(Boolean(synced), true, "the pending call reached WebUI");
-  const remote = pendingToolApprovalFromToolCall({ type: "toolCall", id: "edit", name: "Edit", arguments: synced.arguments });
-  assert.equal(remote?.preview?.path, "src/big.ts");
-  assert.equal(remote?.preview?.before, "a");
-  assert.equal(remote?.preview?.truncated, true, "the cut preview is marked");
-  assert.equal((remote?.preview?.after.length ?? 0) < long.length, true, "WebUI does not get the whole 200k text");
-});
 
 // The WebUI reads a mirrored tool result from `content`/`isError` in the call's round;
 // a result sent as `result` arrived empty and never marked as failed.

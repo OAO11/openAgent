@@ -177,7 +177,7 @@ test("sidebar layout and right dock resizing are delegated to standard shells", 
   assert.match(chatPageSource, /<WorkspacePanelGroup/);
   assert.match(workspacePanelsSource, /<ResizablePanelGroup/);
   assert.match(workspacePanelsSource, /<ResizableHandle/);
-  assert.match(workspacePanelsSource, /<Sheet\s+open=\{open\}/);
+  assert.match(workspacePanelsSource, /<Sheet\s+open=\{open && !suspendMobileOverlay\}/);
   assert.match(workspacePanelsSource, /meta.isUserInteraction/);
   assert.doesNotMatch(rightDockPanelSource, /useRightDockPanelWidth|AnimatePresence|handleResizeStart/);
   assert.match(rightDockPanelSource, /inert=\{!isOpen\}/);

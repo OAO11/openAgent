@@ -3,12 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createTsModuleLoader } from "../helpers/load-ts-module.mjs";
 
-// The desktop app and the WebUI must resolve a K-brain provider's type with the
-// same rule. The cases are shared with the gateway's Go test
-// (internal/kbrain/settings_contract_test.go) so all three stay in step.
+// Provider-type compatibility cases for the desktop K-brain adapter.
 const cases = JSON.parse(
   readFileSync(
-    new URL("../../../agent-gateway/internal/kbrain/testdata/provider_type_cases.json", import.meta.url),
+    new URL("../fixtures/provider-type-cases.json", import.meta.url),
     "utf8",
   ),
 );

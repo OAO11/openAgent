@@ -46,8 +46,8 @@ const resourceTabsSource = readFileSync(
   "utf8",
 );
 const guiTranslations = hostTables(createTsModuleLoader());
-const webRoot = fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url));
-const webTranslations = hostTables(createTsModuleLoader({ rootDir: webRoot }));
+
+
 
 /** A host table with every feature namespace loaded. */
 function hostTables(hostLoader) {
@@ -169,7 +169,7 @@ test("MCP Store cards center connection previews and use working external and ad
 
 test("MCP Hub description follows the active Chinese locale", () => {
   assert.match(pageSource, /subtitle=\{t\("mcpHub\.subtitle"\)\}/);
-  for (const translations of [guiTranslations, webTranslations]) {
+  for (const translations of [guiTranslations]) {
     assert.equal(translations["zh-CN"]["mcpHub.subtitle"], "管理模型上下文协议（MCP）服务器");
     assert.equal(translations["zh-CN"]["mcpHub.storeSearchPlaceholder"], "搜索 MCP 服务器");
   }

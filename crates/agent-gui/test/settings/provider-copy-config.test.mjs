@@ -19,10 +19,7 @@ const guiAdapterSource = readFileSync(
   new URL("../../src/agent-ui-adapters/providerSettings.tsx", import.meta.url),
   "utf8",
 );
-const gatewayAdapterSource = readFileSync(
-  new URL("../../../agent-gateway/web/src/agent-ui-adapters/providerSettings.tsx", import.meta.url),
-  "utf8",
-);
+
 // Settings copy of one locale: the core table plus the lazily loaded settings namespace.
 const settingsSource = (core, namespace) =>
   [`../../../agent-ui/src/i18n/translations/${core}`, `../../../agent-ui/src/i18n/namespaces/${namespace}`]
@@ -66,9 +63,9 @@ test("only the desktop adapter implements the copy button", () => {
   assert.match(guiAdapterSource, /formatProviderCopyConfig\(provider\)/);
   assert.match(guiAdapterSource, /settings\.providerCopyConfig/);
   assert.match(guiAdapterSource, /settings\.providerCopyConfigCopied/);
-  assert.match(gatewayAdapterSource, /export function ProviderCopyConfigButton/);
-  assert.match(gatewayAdapterSource, /return null;/);
-  assert.doesNotMatch(gatewayAdapterSource, /CopyButton/);
+
+
+
 });
 
 test("copy-config labels exist in both settings locales", () => {

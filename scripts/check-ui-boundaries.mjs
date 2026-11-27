@@ -52,54 +52,6 @@ const checks = [
     ],
   },
   {
-    root: join(repoRoot, "crates/agent-gateway/web/src"),
-    forbidden: [
-      {
-        pattern: /(?:from\s+|import\s*\(\s*|import\s+)["']@tauri-apps\//,
-        reason: "WebUI 不能直接导入 Tauri API",
-      },
-      {
-        pattern: /(?:from\s+|import\s*\(\s*)["'][^"']*crates\/agent-gui/,
-        reason: "WebUI 不能依赖桌面应用源码",
-      },
-      {
-        pattern:
-          /(?:from\s+|import\s*\(\s*|import\s+)["'](?:@\/|\.{1,2}\/)[^"']*ChatComposerBar["']/,
-        reason: "聊天输入栏必须使用 @liveagent/ui/pages/chat/ChatComposerBar",
-      },
-      {
-        pattern: /chat-(?:user-bubble|assistant)-action/,
-        reason:
-          "消息操作栏必须使用 @liveagent/ui/components/chat/TranscriptMessageActions",
-      },
-      {
-        pattern:
-          /(?:function|const)\s+(?:ContextCheckpointCard|RetryDetailsBlock)\b|checkpoint-card|retry-details-toggle/,
-        reason: "上下文检查点与重试详情必须使用 @liveagent/ui 共享组件",
-      },
-      {
-        pattern:
-          /(?:function\s+normalizeLiveToolStatus|const\s+VIBING_STATUS\s*=|function\s+buildContextUsageScanItems)\b/,
-        reason: "聊天实时状态与上下文用量投影必须使用 @liveagent/ui 共享逻辑",
-      },
-      {
-        pattern:
-          /(?:from\s+|import\s*\(\s*|import\s+)["']@liveagent\/ui\/(?:components\/chat\/ChatHeader|pages\/(?:skills-hub\/SkillsHubPage|mcp-hub\/McpHubPage))["']/,
-        reason: "公共页面与聊天顶部栏必须由共享 ApplicationView 统一组装",
-      },
-      {
-        pattern:
-          /(?:from\s+|import\s*\(\s*|import\s+)["']@\/pages\/chat\/(?:AssistantBubble|useChatSkills|queue\/chatTurnQueue|assistant-bubble\/[^"']+)["']/,
-        reason: "聊天渲染、Skill 与队列公共逻辑必须使用 agent-ui 共享实现",
-      },
-      {
-        pattern:
-          /(?:from\s+|import\s*\(\s*|import\s+)["']\.\/(?:FileDropOverlay|WorkspaceOverlayHost)["']/,
-        reason: "聊天 Overlay 必须使用 agent-ui 共享实现",
-      },
-    ],
-  },
-  {
     root: join(repoRoot, "crates/agent-gui/src"),
     forbidden: [
       {
@@ -186,7 +138,6 @@ const retiredDialogPatterns = [
 for (const root of [
   join(repoRoot, "crates/agent-ui/src"),
   join(repoRoot, "crates/agent-gui/src"),
-  join(repoRoot, "crates/agent-gateway/web/src"),
 ]) {
   for (const file of listUiFiles(root)) {
     const source = readFileSync(file, "utf8");
@@ -222,16 +173,6 @@ export {
 } from "./mcpOps";
 `,
   ],
-  [
-    "crates/agent-gateway/web/src/lib/settings/index.ts",
-    `export * from "@liveagent/ui/lib/settings";
-`,
-  ],
-  [
-    "crates/agent-gateway/web/src/lib/chat/uiMessages.ts",
-    `export * from "@liveagent/ui/lib/chat/uiMessages";
-`,
-  ],
 ]);
 for (const [facadePath, expectedSource] of sharedFacades) {
   const absolutePath = join(repoRoot, facadePath);
@@ -244,7 +185,6 @@ for (const [facadePath, expectedSource] of sharedFacades) {
 
 const appRoots = [
   join(repoRoot, "crates/agent-gui/src"),
-  join(repoRoot, "crates/agent-gateway/web/src"),
 ];
 const retiredSharedDeclarations = [
   "buildGatewayMessageRefPayload",
@@ -330,35 +270,6 @@ const retiredSharedCopies = [
   "crates/agent-gui/src/pages/chat/transcript/EditableUserMessageBubble.tsx",
   "crates/agent-gui/src/pages/chat/workspace/useWorkspaceOverlays.ts",
   "crates/agent-gui/src/pages/settings/memory/platform.tsx",
-  "crates/agent-gateway/web/src/components/icons.tsx",
-  "crates/agent-gateway/web/src/agent-ui-adapters/chatModelOptions.ts",
-  "crates/agent-gateway/web/src/agent-ui-adapters/mentionReferences.ts",
-  "crates/agent-gateway/web/src/app/FileDropOverlay.tsx",
-  "crates/agent-gateway/web/src/app/WorkspaceOverlayHost.tsx",
-  "crates/agent-gateway/web/src/lib/chat/changedFiles.ts",
-  "crates/agent-gateway/web/src/lib/chat/assistantBubbleAdapter.ts",
-  "crates/agent-gateway/web/src/lib/chat/changedFilesAdapter.ts",
-  "crates/agent-gateway/web/src/lib/chat/chatPageHelpersAdapter.ts",
-  "crates/agent-gateway/web/src/lib/chat/fileChangeStats.ts",
-  "crates/agent-gateway/web/src/lib/chat/hostedSearch.ts",
-  "crates/agent-gateway/web/src/lib/chat/mentionReferences.ts",
-  "crates/agent-gateway/web/src/lib/chat/toolPreview.ts",
-  "crates/agent-gateway/web/src/lib/chat/toolPreviewAdapter.ts",
-  "crates/agent-gateway/web/src/lib/chat/uploadedFiles.ts",
-  "crates/agent-gateway/web/src/lib/chat/userMessageContent.tsx",
-  "crates/agent-gateway/web/src/lib/chat/uiMessages.ts",
-  "crates/agent-gateway/web/src/lib/fontFamily.ts",
-  "crates/agent-gateway/web/src/lib/settings/index.ts",
-  "crates/agent-gateway/web/src/pages/chat/AssistantBubble.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/RoundContent.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/ToolCallItem.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/ToolImages.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/ToolResultDisplay.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/ToolTraceGroup.tsx",
-  "crates/agent-gateway/web/src/pages/chat/assistant-bubble/assistantBubbleUtils.ts",
-  "crates/agent-gateway/web/src/pages/chat/queue/chatTurnQueue.ts",
-  "crates/agent-gateway/web/src/pages/chat/useChatSkills.ts",
-  "crates/agent-gateway/web/src/pages/settings/memory/platform.tsx",
 ];
 for (const retiredPath of retiredSharedCopies) {
   if (sharedFacades.has(retiredPath)) continue;
@@ -373,10 +284,6 @@ const applicationEntries = [
   [
     join(repoRoot, "crates/agent-gui/src/pages/ChatPage.tsx"),
     join(repoRoot, "crates/agent-gui/src/pages/ChatPage.tsx"),
-  ],
-  [
-    join(repoRoot, "crates/agent-gateway/web/src/app/GatewayApp.tsx"),
-    join(repoRoot, "crates/agent-gateway/web/src/app/GatewayAppView.tsx"),
   ],
 ];
 for (const [entryFile, viewFile] of applicationEntries) {

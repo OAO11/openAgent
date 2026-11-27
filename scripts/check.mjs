@@ -65,6 +65,7 @@ function changedBiomeStep(name, workspace) {
 function buildSteps() {
   const strict = profile === "strict";
   const steps = [
+    miseStep("Product source scope", "pnpm", ["check:source-scope"]),
     miseStep("Diff hygiene", "node", ["scripts/check-diff-hygiene.mjs"]),
     miseStep("Check script tests", "pnpm", ["check:script-tests"]),
     miseStep("Shared UI boundaries", "pnpm", ["check:ui-boundaries"]),

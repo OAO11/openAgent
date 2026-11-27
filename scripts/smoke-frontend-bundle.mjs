@@ -18,7 +18,7 @@
 //   5. fails on uncaught page errors, error boundaries or console errors.
 //
 // Usage:
-//   node scripts/smoke-frontend-bundle.mjs [--app gui|webui] [--dist DIR]
+//   node scripts/smoke-frontend-bundle.mjs [--app gui] [--dist DIR]
 //     [--browser chromium|webkit|all] [--runs N] [--kbrain-url URL]
 //     [--json out.json] [--screenshot out.png] [--cpu-throttle 4 (chromium)]
 // Playwright is not a workspace dependency: install it next to the script
@@ -26,13 +26,7 @@
 // entry module. Browsers come from `npx playwright install chromium webkit`.
 //
 // `--app gui` (default) boots the desktop frontend against the fake K-brain
-// and waits for the main UI. `--app webui` boots the Gateway WebUI: its
-// same-origin API answers 401, so the run waits for the login screen (the
-// lazy chat/workbench chunks are still evaluated by the import pass).
-//
-// CI runs this for both apps in the Frontend Bundles job
-// (.github/workflows/ci.yml, Playwright set up by
-// .github/actions/setup-playwright); see docs/testing/ci-checks.md.
+// and waits for the main UI. Run it locally after pnpm build:gui.
 
 import { createReadStream, existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -46,12 +40,6 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 // same-origin paths are a backend API (answered instead of the SPA fallback).
 export const APPS = {
   gui: { dist: "crates/agent-gui/dist", readySelector: "", apiPrefixes: [] },
-  webui: {
-    dist: "crates/agent-gateway/web/dist",
-    // The login screen's token field: no gateway session in a smoke run.
-    readySelector: "#access-token",
-    apiPrefixes: ["/api/", "/ws", "/image-proxy"],
-  },
 };
 
 export function parseArguments(argv) {
@@ -93,7 +81,7 @@ export function parseArguments(argv) {
     }
   }
   const app = APPS[options.app];
-  if (!app) throw new Error(`unsupported app: ${options.app} (expected gui or webui)`);
+  if (!app) throw new Error(`unsupported app: ${options.app} (expected gui)`);
   if (!options.dist) options.dist = path.join(repoRoot, app.dist);
   options.readySelector = app.readySelector;
   options.apiPrefixes = app.apiPrefixes;

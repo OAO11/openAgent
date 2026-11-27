@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Design token guardrail for the shared UI, the desktop frontend and the
-// WebUI (`src/` of crates/agent-ui, crates/agent-gui, crates/agent-gateway/web).
+// Design token guardrail for the shared UI and desktop frontend (`src/` of crates/agent-ui, crates/agent-gui).
 //
 // Colors, radii, shadows, z-index layers and font sizes come from the theme
 // tokens in crates/agent-ui/src/styles/tokens.css (mapped to Tailwind in
@@ -33,7 +32,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const BASELINE_FILE = path.join(repoRoot, "scripts/budgets/design-token-baseline.json");
 
-export const SOURCE_ROOTS = ["crates/agent-ui/src/", "crates/agent-gui/src/", "crates/agent-gateway/web/src/"];
+export const SOURCE_ROOTS = ["crates/agent-ui/src/", "crates/agent-gui/src/"];
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".css"]);
 
 // Files that define colors on purpose: the token files themselves and the
@@ -226,7 +225,7 @@ export function formatReport({ violations, stale }, details = {}) {
     }
     lines.push(
       "",
-      "Use the semantic tokens and shared primitives instead (docs/design-system.md):",
+      "Use the semantic tokens and shared primitives instead (crates/agent-ui/src/styles/tokens.css):",
       "status colors -> text-success / text-warning / text-info / text-destructive",
       "(tints with opacity: bg-warning/10 border-warning/25), overlays -> bg-overlay,",
       "font sizes -> text-tiny..text-5xl, radii -> rounded-sm..rounded-4xl, layers -> layer-*.",

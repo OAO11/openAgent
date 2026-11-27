@@ -282,45 +282,12 @@ test("both hosts gate apps by the cua-driver identity ruling via the shared hook
   );
   // WebUI 接线：门控入参同源（agent 模式 + 工作区 mcpServers），列表
   // 传入 composer；列出的是已连接桌面宿主的应用（cua 工具操作桌面）。
-  const gatewayApp = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/GatewayApp.tsx", import.meta.url),
-    "utf8",
-  );
-  assert.match(gatewayApp, /useMentionApps\(workspaceResources\.mcpServers, isAgentMode\)/);
-  const gatewayView = readFileSync(
-    new URL("../../../agent-gateway/web/src/app/GatewayAppView.tsx", import.meta.url),
-    "utf8",
-  );
-  assert.match(gatewayView, /mentionApps=\{mentionApps\}/);
+
+
+
+
 });
 
-test("the gateway relays installed apps as a vetted pass-through frame", () => {
-  // 直通链路：proto 臂（编号只增不改）→ Go 白名单 → 桌面分发与 bridge
-  // → WebUI shim 复用 GUI 的同名 invoke 命令。少一环 WebUI 的应用分组
-  // 就静默消失，所以每一环都铺点。
-  const proto = readFileSync(
-    new URL("../../../agent-gateway/proto/v2/gateway.proto", import.meta.url),
-    "utf8",
-  );
-  assert.match(proto, /InstalledAppsListRequest installed_apps_list = 100;/);
-  assert.match(proto, /InstalledAppsListResponse installed_apps_list_resp = 105;/);
-  const guard = readFileSync(
-    new URL("../../../agent-gateway/internal/protocol/pbws/guard.go", import.meta.url),
-    "utf8",
-  );
-  assert.match(guard, /GatewayEnvelope_InstalledAppsList/);
-  const envelope = source(tauriRoot, "services/gateway/envelope_handler.rs");
-  assert.match(envelope, /Payload::InstalledAppsList/);
-  assert.match(envelope, /InstalledAppsListResp/);
-  const bridge = source(tauriRoot, "services/gateway_bridge.rs");
-  assert.match(bridge, /handle_installed_apps_list/);
-  const shim = readFileSync(
-    new URL("../../../agent-gateway/web/src/shims/tauriCore.ts", import.meta.url),
-    "utf8",
-  );
-  assert.match(shim, /case "cua_driver_list_installed_apps":/);
-  assert.match(shim, /listInstalledApps\(\)/);
-});
 
 test("the Rust command excludes the host on every platform and is registered", () => {
   const service = source(tauriRoot, "services/cua_driver/installed_apps.rs");

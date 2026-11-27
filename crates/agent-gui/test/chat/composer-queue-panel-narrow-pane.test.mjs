@@ -25,7 +25,7 @@ const MEASURE = `(() => {
 })()`;
 
 const CASES = [
-  ...["desktop", "web"].flatMap((surface) =>
+  ...["desktop"].flatMap((surface) =>
     [1280, 390, 320].map((width) => ({ surface, withGoal: false, width })),
   ),
   { surface: "desktop", withGoal: true, width: 1280 },

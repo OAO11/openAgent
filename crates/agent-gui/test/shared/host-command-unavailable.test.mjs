@@ -109,11 +109,7 @@ test("settings surfaces swap host diagnostics for a desktop-only hint", () => {
   assert.match(backup, /hostAwareErrorMessage\(error, unavailableMessage\)/);
   assert.match(backup, /errorText\(error, t\("settings\.backupSyncDesktopHostRequired"\)\)/);
 
-  const ssh = readFileSync(
-    new URL("../../../agent-ui/src/pages/settings/SshSection.tsx", import.meta.url),
-    "utf8",
-  );
-  assert.match(ssh, /hostAwareErrorMessage\(scanError, t\("settings\.sshImportDesktopHostRequired"\)\)/);
+
 });
 
 test("settings desktop-only hints exist in both locales", () => {

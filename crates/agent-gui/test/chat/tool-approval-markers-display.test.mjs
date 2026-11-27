@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createWebModuleLoader } from "../../../agent-gateway/test/helpers/load-web-module.mjs";
+
 import { createTsModuleLoader } from "../helpers/load-ts-module.mjs";
 
 // 审查回归:Gateway 同步给 WebUI 的审批标记是合成参数,只供审批栏读取,
@@ -15,13 +15,6 @@ const { requestToolApproval, answerToolApproval } = loader.loadModule("src/lib/t
 const uiMessages = loader.loadModule("@liveagent/ui/lib/chat/uiMessages.ts");
 const toolApprovalArgs = loader.loadModule("@liveagent/ui/lib/chat/toolApprovalArgs.ts");
 
-const webLoader = createWebModuleLoader({
-  rootDir: fileURLToPath(new URL("../../../agent-gateway/web", import.meta.url)),
-});
-const { createTurn, applyEventToTurn } = webLoader.loadModule("src/lib/chat/transcript/turnReducer.ts");
-const { buildTurnRows } = webLoader.loadModule("src/lib/chat/transcript/rows.ts");
-const webUiMessages = webLoader.loadModule("@liveagent/ui/lib/chat/uiMessages.ts");
-const webApprovalArgs = webLoader.loadModule("@liveagent/ui/lib/chat/toolApprovalArgs.ts");
 
 const computerCall = {
   type: "toolCall",
@@ -67,41 +60,6 @@ test("K-brain 会话级审批的三个新标记不得进入工具参数展示", 
   );
 });
 
-test("WebUI 经真实 reducer 收到带标记的 tool_call 后,展开参数里也不能出现新标记", async () => {
-  await withPendingApproval(
-    { summary: '{"action":"call","tool":"click"}', sessionScope: "call:click", sessionWide: true },
-    () => {
-      const synced = buildGatewayToolCallPreviewArguments(computerCall);
-      let turn = createTurn({ key: "req:review", runId: "run-review", phase: "streaming" });
-      // 桌面 onToolCall 先推原始参数,审批开始后重推叠加标记的参数。
-      turn = applyEventToTurn(turn, {
-        type: "tool_call",
-        id: computerCall.id,
-        name: computerCall.name,
-        arguments: computerCall.arguments,
-        round: 1,
-      });
-      turn = applyEventToTurn(turn, {
-        type: "tool_call",
-        id: computerCall.id,
-        name: computerCall.name,
-        arguments: synced,
-        round: 1,
-      });
-      const assistant = buildTurnRows(turn).find((row) => row.kind === "assistant");
-      const block = assistant.rounds[0].blocks.find((item) => item.kind === "tool");
-      assert.ok(block, "tool block present");
-      const pending = webApprovalArgs.pendingToolApprovalFromToolCall(block.item.toolCall);
-      assert.equal(pending?.sessionWide, true, "审批栏仍能从同一份参数还原会话级标记");
-      const display = webUiMessages.toolCallArgsForDisplay(block.item.toolCall);
-      assert.deepEqual(
-        Object.keys(display).filter((key) => key.startsWith("__toolApproval")),
-        [],
-        `WebUI 参数展示泄漏合成标记: ${JSON.stringify(display)}`,
-      );
-    },
-  );
-});
 
 test("Gateway 同步标记的摘要沿用审批摘要上限(2000 字符)", async () => {
   // 旧实现经 summarizeToolCallForApproval 生成摘要,末尾统一截断到 2000 字符,

@@ -7,6 +7,7 @@ const readUi = (path) =>
 
 // Rules nested under `@media (pointer: coarse)` inside the given cascade layer.
 function coarseRules(css, layer) {
+  css = css.replace(/\r\n/g, "\n");
   const start = css.indexOf(`@layer ${layer} {\n  @media (pointer: coarse) {`);
   assert.notEqual(start, -1, `coarse-pointer block in @layer ${layer}`);
   let depth = 0;

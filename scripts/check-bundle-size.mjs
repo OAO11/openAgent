@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Bundle size budget for the desktop (crates/agent-gui) and Gateway WebUI
-// (crates/agent-gateway/web) production builds.
+// Bundle size budget for the openAgent desktop production build.
 //
 // Measures, per app:
 //   - startup JS: the entry chunk(s) from dist/index.html plus every chunk
@@ -13,11 +12,11 @@
 // stdout and, on GitHub Actions, to the job summary.
 //
 // Usage:
-//   node scripts/check-bundle-size.mjs [--app gui|webui|all] [--dist DIR]
+//   node scripts/check-bundle-size.mjs [--app gui|all] [--dist DIR]
 //     [--update] [--json out.json]
-// Build first (`pnpm build:gui`, `pnpm build:webui`). `--update` rewrites the
+// Build first (`pnpm build:gui`). `--update` rewrites the
 // budget entries of the measured apps with the current sizes; commit that
-// change deliberately (see docs/testing/ci-checks.md).
+// change deliberately (see docs/OPENAGENT_DEVELOPMENT.md).
 
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -29,7 +28,6 @@ export const BUDGET_FILE = path.join(repoRoot, "scripts/budgets/bundle-size.json
 
 export const APP_DISTS = {
   gui: "crates/agent-gui/dist",
-  webui: "crates/agent-gateway/web/dist",
 };
 
 // [key, label, gated]. Informational metrics are reported but never fail.
@@ -43,7 +41,7 @@ export const METRICS = [
 ];
 
 function parseArguments(argv) {
-  const options = { apps: ["gui", "webui"], dist: "", update: false, json: "" };
+  const options = { apps: ["gui"], dist: "", update: false, json: "" };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     const take = () => {
@@ -54,14 +52,14 @@ function parseArguments(argv) {
     };
     if (flag === "--app") {
       const app = take();
-      options.apps = app === "all" ? ["gui", "webui"] : [app];
+      options.apps = app === "all" ? ["gui"] : [app];
     } else if (flag === "--dist") options.dist = path.resolve(take());
     else if (flag === "--update") options.update = true;
     else if (flag === "--json") options.json = path.resolve(take());
     else throw new Error(`unknown option: ${flag}`);
   }
   for (const app of options.apps) {
-    if (!APP_DISTS[app]) throw new Error(`unknown app: ${app} (expected gui, webui or all)`);
+    if (!APP_DISTS[app]) throw new Error(`unknown app: ${app} (expected gui or all)`);
   }
   if (options.dist && options.apps.length !== 1) throw new Error("--dist needs a single --app");
   return options;

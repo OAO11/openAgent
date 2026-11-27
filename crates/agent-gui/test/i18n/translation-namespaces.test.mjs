@@ -21,7 +21,7 @@ import {
 // first render (no raw keys) without the startup bundle carrying them.
 
 const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
-const sourceRoots = ["crates/agent-ui/src", "crates/agent-gui/src", "crates/agent-gateway/web/src"];
+const sourceRoots = ["crates/agent-ui/src", "crates/agent-gui/src"];
 const locales = ["zh-CN", "en-US"];
 const NAMESPACE_IMPORT = /^@liveagent\/ui\/i18n\/namespaces\/([A-Za-z]+)$/;
 
@@ -105,12 +105,6 @@ test("each message lives in one place: core table, one namespace or a host overr
   const core = loader.loadModule("@liveagent/ui/i18n/sharedTranslations.ts").SHARED_TRANSLATIONS;
   const hostOverrides = [
     ["GUI", loader.loadModule("src/i18n/config.ts").GUI_TRANSLATION_OVERRIDES],
-    [
-      "WebUI",
-      createTsModuleLoader({
-        rootDir: fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url)),
-      }).loadModule("src/i18n/config.ts").WEBUI_TRANSLATION_OVERRIDES,
-    ],
   ];
   const seen = new Map();
   for (const [namespace, tables] of messages) {
@@ -182,7 +176,7 @@ test("the core i18n modules do not load feature namespaces", () => {
     "crates/agent-ui/src/i18n/index.ts",
     "crates/agent-ui/src/i18n/LocaleContext.tsx",
     "crates/agent-gui/src/i18n/config.ts",
-    "crates/agent-gateway/web/src/i18n/config.ts",
+
   ];
   for (const relative of coreModules) {
     const source = readFileSync(path.join(repositoryRoot, relative), "utf8");

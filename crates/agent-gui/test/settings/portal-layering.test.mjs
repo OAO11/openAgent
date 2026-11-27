@@ -94,7 +94,7 @@ test("custom React portals opt into a semantic overlay layer", () => {
   const sourceRoots = [
     new URL("../../../agent-ui/src/", import.meta.url),
     new URL("../../src/", import.meta.url),
-    new URL("../../../agent-gateway/web/src/", import.meta.url),
+
   ];
   const portalFiles = sourceRoots
     .flatMap(collectSourceFiles)

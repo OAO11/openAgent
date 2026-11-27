@@ -92,25 +92,23 @@ test("the pane host shows the confirmation in place without remounting the viewp
 
 test("both hosts route the pane × and the close-current-view command through the terminal close flow", () => {
   const chatPage = readSource("../../src/pages/ChatPage.tsx");
-  const gatewayView = readSource("../../../agent-gateway/web/src/app/GatewayAppView.tsx");
-  const gatewayWorkbench = readSource(
-    "../../../agent-gateway/web/src/app/workbench/useGatewayWorkbench.ts",
-  );
+
+
   assert.match(chatPage, /useTerminalPaneCloseFlow\(\{/);
   assert.match(chatPage, /onClose=\{\(\) => requestWorkbenchClosePane\(pane\.paneId\)\}/);
   // Mod+Alt+W is the rebindable "close current view" command now; its pane
   // branch still goes through the same close request.
   assert.match(chatPage, /if \(focusedPaneId\) requestWorkbenchClosePane\(focusedPaneId\);/);
   assert.match(chatPage, /closeRequest=\{\s*terminalPaneClose\.pendingClose\?\.paneId === pane\.paneId/);
-  assert.match(gatewayWorkbench, /useTerminalPaneCloseFlow\(\{/);
-  assert.match(gatewayView, /if \(focusedPaneId\) workbenchController\.requestClosePane\(focusedPaneId\);/);
-  assert.doesNotMatch(gatewayWorkbench, /event\.key === "w"/, "no hard-coded chord left behind");
+
+
+
   assert.doesNotMatch(chatPage, /event\.key === "w"/);
-  assert.match(gatewayView, /onClose=\{\(\) => workbenchController\.requestClosePane\(pane\.paneId\)\}/);
-  assert.match(gatewayView, /workbenchController\.terminalPaneCloseRequest\?\.paneId === pane\.paneId/);
+
+
   // closed 事件联动收 Pane 的通路保留,是终止后 Pane 消失的正式路径。
   assert.match(chatPage, /if \(paneId\) handleWorkbenchClosePane\(paneId\);/);
-  assert.match(gatewayWorkbench, /if \(paneId\) handleClosePaneRef\.current\(paneId\);/);
+
 });
 
 test("a parked session-closed pane recovers by itself when the session is listed again", () => {

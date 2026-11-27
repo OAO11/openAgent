@@ -277,17 +277,6 @@ test("GUI: background pane binding guards the cycle; only the current conversati
   assert.match(background, /if \(currentConversationIdRef\.current !== conversationId\) \{\s*focusWorkbenchConversationPane\(conversationId\);\s*return;/);
 });
 
-test("WebUI: pane host guards the cycle under the same condition as its runtime controls", () => {
-  const source = read("../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx");
-  assert.match(
-    source,
-    /onChatRuntimeControlsChange=\{\s*usePrimary && primary \? primary\.onChatRuntimeControlsChange : \(\) => onFocusPane\(\)\s*\}/,
-  );
-  assert.match(source, /guardModeCycle=\{usePrimary && primary \? undefined : \(\) => onFocusPane\(\)\}/);
-  // GatewayAppView's own composer always edits the displayed conversation.
-  const app = read("../../../agent-gateway/web/src/app/GatewayAppView.tsx");
-  assert.match(app, /onChatRuntimeControlsChange=\{handleChatRuntimeControlsChange\}/);
-});
 
 test.after(async () => {
   if (root) await act(async () => root.unmount());

@@ -14,23 +14,22 @@ import { loadTranslationNamespaces } from "../helpers/translation-namespaces.mjs
 const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 const sharedSourceRoot = fileURLToPath(new URL("../../../agent-ui/src/", import.meta.url));
 const guiSourceRoot = fileURLToPath(new URL("../../src/", import.meta.url));
-const webRoot = fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url));
-const webSourceRoot = path.join(webRoot, "src");
+
+
 // The host tables plus every feature namespace: what a host serves once all of
 // its features have loaded.
 const guiLoader = createTsModuleLoader();
 const guiTranslations = guiLoader.loadModule("src/i18n/config.ts").translations;
 loadTranslationNamespaces(guiLoader);
-const webLoader = createTsModuleLoader({ rootDir: webRoot });
-const webTranslations = webLoader.loadModule("src/i18n/config.ts").translations;
-loadTranslationNamespaces(webLoader);
+
+
+
 // Shared messages: the core table plus every namespace, with no host overrides.
 const sharedTranslations = guiLoader
   .loadModule("@liveagent/ui/i18n/hostTranslations.ts")
   .createHostTranslations({ "zh-CN": {}, "en-US": {} }).translations;
 const hostTranslations = [
   ["GUI", guiTranslations],
-  ["WebUI", webTranslations],
 ];
 const locales = ["zh-CN", "en-US"];
 const nonTranslationLiterals = new Set([
@@ -134,7 +133,6 @@ function placeholders(value) {
 const sharedTranslationKeys = collectTranslationKeys(sharedSourceRoot, true);
 const hostSourceTranslations = [
   ["GUI", guiTranslations, collectTranslationKeys(guiSourceRoot).directKeys],
-  ["WebUI", webTranslations, collectTranslationKeys(webSourceRoot).directKeys],
 ];
 const builtinToolCatalog = guiLoader.loadModule(
   "@liveagent/ui/lib/tools/builtinToolCatalog.ts",
@@ -221,15 +219,7 @@ test("both hosts provide every shared literal translation key", () => {
 
 test("host translation overrides contain no identical shared messages", () => {
   for (const locale of locales) {
-    for (const [key, value] of Object.entries(guiTranslations[locale])) {
-      if (!Object.hasOwn(webTranslations[locale], key)) continue;
-      if (webTranslations[locale][key] !== value) continue;
-      assert.equal(
-        sharedTranslations[locale][key],
-        value,
-        `${locale} identical host message ${key} must live in shared translations`,
-      );
-    }
+
   }
 });
 

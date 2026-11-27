@@ -14,13 +14,9 @@ const source = ["SkillsHubPage.tsx", "InstalledSkillsView.tsx"]
   )
   .join("\n");
 const guiLoader = createTsModuleLoader();
-const webRoot = fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url));
+
 const hostTranslations = [
   ["GUI", hostTables(guiLoader)],
-  [
-    "WebUI",
-    hostTables(createTsModuleLoader({ rootDir: webRoot })),
-  ],
 ];
 
 /** A host table with every feature namespace loaded. */

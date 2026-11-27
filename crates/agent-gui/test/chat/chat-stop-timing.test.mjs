@@ -419,7 +419,7 @@ test("a direct queue stop pauses processing until composer Stop resumes it", asy
   hookHarness.cleanup();
 });
 
-test("K-brain native queue subscribes to Gateway queue answers", async () => {
+test("K-brain native queue does not subscribe to retired remote queue events", async () => {
   const hookHarness = createHookHarness();
   const listeners = new Map();
   const responses = [];
@@ -544,7 +544,7 @@ test("K-brain native queue subscribes to Gateway queue answers", async () => {
   );
 
   await flushPromises();
-  assert.equal(listeners.has("gateway:chat-queue-request"), true);
+  assert.equal(listeners.has("gateway:chat-queue-request"), false);
   assert.deepEqual(responses, []);
   assert.deepEqual(answerCalls, []);
 

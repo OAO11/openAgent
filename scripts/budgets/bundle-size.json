@@ -1,5 +1,5 @@
 {
-  "_comment": "Bundle size budget checked by scripts/check-bundle-size.mjs. A gated metric fails when it exceeds its budget by more than `tolerance`. Raise a budget only on purpose: `pnpm build:gui && pnpm build:webui && pnpm check:bundle-size --update`, then commit this file (docs/testing/ci-checks.md).",
+  "_comment": "Desktop bundle budget. Build with pnpm build:gui before checking or explicitly updating this budget.",
   "tolerance": 0.03,
   "updated": "2026-11-25",
   "apps": {
@@ -10,14 +10,6 @@
       "startupCssGzip": 72786,
       "totalJsRaw": 34568384,
       "totalDistRaw": 37938906
-    },
-    "webui": {
-      "startupJsGzip": 184034,
-      "startupJsRaw": 662551,
-      "startupJsFiles": 11,
-      "startupCssGzip": 83516,
-      "totalJsRaw": 34441980,
-      "totalDistRaw": 37585296
     }
   }
 }

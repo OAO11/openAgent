@@ -21,13 +21,7 @@ const chatTurnQueueSource = readFileSync(
   new URL("../../src/pages/chat/queue/useChatTurnQueue.ts", import.meta.url),
   "utf8",
 );
-const gatewayAppSource = readFileSync(
-  new URL(
-    "../../../agent-gateway/web/src/app/hooks/useGatewayConversationRuntime.ts",
-    import.meta.url,
-  ),
-  "utf8",
-);
+
 const contextUsageRingSource = readFileSync(
   new URL("../../../agent-ui/src/components/chat/ContextUsageRing.tsx", import.meta.url),
   "utf8",
@@ -79,28 +73,6 @@ test("manual compaction unlocks exactly at the warn ratio", () => {
   assert.equal(canManualCompact(0.99), true);
 });
 
-test("WebUI manual compaction targets the requested conversation and only accepts on proceed", () => {
-  assert.doesNotMatch(chatTurnQueueSource, /conversation is not active on desktop/);
-  // 严格 operationId：缺失即拒绝，不回退 requestId（回退产生 WebUI 从未登记的
-  // operationId，终态永不匹配、挂满超时）。
-  assert.match(chatTurnQueueSource, /manual compaction requires operationId/);
-  // 受理只在探针通过、真正开始压缩时经 onAccepted 同步回包。
-  assert.match(
-    chatTurnQueueSource,
-    /manualCompactActionRef\s*\.current\(\{\s*conversationId,\s*operationId,\s*onAccepted: respondAccepted,?\s*\}\)/,
-  );
-  // 探针拒绝据返回值同步回 accepted:false + message（不再受理即回包）。
-  assert.match(
-    chatTurnQueueSource,
-    /fail\(result\.message \|\| "manual compaction declined", codeFor\(result\.status\)\)/,
-  );
-});
-
-test("WebUI manual compaction converges from the transcript store and a bounded timeout", () => {
-  assert.match(gatewayAppSource, /store\.getSnapshot\(\)\.manualCompactionResult/);
-  assert.match(gatewayAppSource, /MANUAL_COMPACTION_TIMEOUT_MS/);
-  assert.match(gatewayAppSource, /chat\.manualCompactTimedOut/);
-});
 
 test("context usage ring lives in the stacked runtime control deck", () => {
   assert.match(chatComposerBarSource, /composer-control-deck/);

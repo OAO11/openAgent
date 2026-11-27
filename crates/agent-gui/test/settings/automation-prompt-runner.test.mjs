@@ -50,10 +50,7 @@ const cronViewSource = readFileSync(
   new URL("../../../agent-ui/src/pages/settings/CronTaskViewModal.tsx", import.meta.url),
   "utf8",
 );
-const webAutomationBackendSource = readFileSync(
-  new URL("../../../agent-gateway/web/src/lib/automation/backend.ts", import.meta.url),
-  "utf8",
-);
+
 const cronModalSource = readFileSync(
   new URL("../../../agent-ui/src/pages/settings/CronTaskModal.tsx", import.meta.url),
   "utf8",
@@ -150,10 +147,7 @@ test("Cron manual run stays wired in shared UI", () => {
   assert.match(cronViewSource, /key=\{task\.id\}/);
   assert.match(cronViewSource, /settings\.cronViewRunNow/);
   assertJsxDimensions(cronViewSource, "Play", { width: "3.5", height: "3.5" });
-  assert.match(
-    webAutomationBackendSource,
-    /return cronManage<CronRunNowResponse>\("run_now", taskId\)/,
-  );
+
 });
 
 test("Cron manual run remains locked until its non-skip run reaches a terminal state", () => {
@@ -329,7 +323,7 @@ test("legacy automation hosts retain their existing run behavior", async () => {
   assert.equal(backend.canCancelRun(), false);
   await assert.rejects(backend.cancelRun("task"), /unavailable on this host/);
   assert.deepEqual(invokeCalls, []);
-  assert.match(webAutomationBackendSource, /async cancelRun\(taskId: string, executionId\?: string\): Promise<void>/);
-  assert.match(webAutomationBackendSource, /executionId \? \{ executionId \} : undefined/);
-  assert.match(webAutomationBackendSource, /canCancelRun\(\): boolean \{\s*return true/);
+
+
+
 });

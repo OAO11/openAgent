@@ -254,30 +254,3 @@ test("permission.auto_resolved marks the call before or after it arrives", async
   assert.deepEqual(args.readToolPermissionAutoResolved(last("after").arguments), { source: "read_only" });
   assert.deepEqual(args.readToolPermissionAutoResolved(last("before").arguments), { source: "rule", rule: "Bash(npm test:*)", scope: "project" });
 });
-
-test("WebUI decisions carry scope and reason through the bridge, the Gateway RPC and the desktop queue", async () => {
-  const web = createTsModuleLoader({ rootDir: fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url)) });
-  const bridge = web.loadModule("src/lib/chat/toolApprovalBridge.ts");
-  const received = [];
-  bridge.registerToolApprovalDecisionHandler(async (...value) => {
-    received.push(value);
-    return { ok: true };
-  });
-  await bridge.submitToolApprovalDecision("call", "approve_session", "conv", { scope: "project" });
-  await bridge.submitToolApprovalDecision("call", "deny", undefined, { reason: "no" });
-  assert.deepEqual(received, [["call", "approve_session", "conv", { scope: "project" }], ["call", "deny", undefined, { reason: "no" }]]);
-  bridge.registerToolApprovalDecisionHandler(null);
-
-  const read = (file) => readFileSync(new URL(file, import.meta.url), "utf8");
-  assert.match(read("../../../agent-gateway/web/src/app/GatewayApp.tsx"), /buildToolApprovalRequestJson\(decision, options\)/);
-  for (const file of [
-    "../../../agent-gateway/web/src/app/hooks/useGatewayChatPresentation.tsx",
-    "../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx",
-    "../../src/pages/chat/components/PendingToolApprovalBar.tsx",
-  ]) {
-    assert.match(read(file), /onDecide=\{\(toolCallId, decision, options\)/, file);
-  }
-  const queue = read("../../src/pages/chat/queue/useChatTurnQueue.ts");
-  assert.match(queue, /parseToolApprovalRequestJson\(request\.requestJson\)/);
-  assert.match(queue, /answerToolApproval\(itemId, parsed\.decision, \{\s*conversationId,\s*scope: parsed\.scope,\s*reason: parsed\.reason,?\s*\}\)/);
-});

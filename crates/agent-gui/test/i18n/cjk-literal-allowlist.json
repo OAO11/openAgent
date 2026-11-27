@@ -107,13 +107,6 @@
       ]
     },
     {
-      "file": "crates/agent-gateway/web/src/lib/chatUi.ts",
-      "reason": "Full-width bars in the DSML tool-call marker pattern matched in model output.",
-      "literals": [
-        "(?:｜{2}||{2})s*DSMLs*(?:｜{2}||{2})"
-      ]
-    },
-    {
       "file": "crates/agent-gui/src/lib/chat/page/chatPageHelpers.ts",
       "reason": "Title-generation prompt sent to the model; not interface text.",
       "literals": [
@@ -364,6 +357,54 @@
         "Zhipu GLM Team (智谱团队)",
         "火山方舟 (Volcengine)"
       ]
+    },
+    {
+      "file": "crates/agent-ui/src/lib/appearance/falconCatalog.ts",
+      "reason": "Localized theme labels generated from the pinned Falcon catalog; labelZh is used only for Chinese.",
+      "literals": [
+        "Falcon · 豆绿",
+        "Falcon · 米杏",
+        "Falcon · 青瓷",
+        "Falcon · 浅绿",
+        "Falcon · 高对比绿",
+        "Falcon · 浅灰",
+        "Falcon · 樱粉",
+        "Falcon · 暖黄",
+        "Falcon · 经典深色",
+        "Falcon · 深海蓝",
+        "Falcon · 暖咖啡",
+        "Falcon · 深青绿",
+        "Falcon · 暗紫",
+        "Islands · 豆绿",
+        "Islands · 米杏",
+        "Islands · 青瓷",
+        "Islands · 浅绿",
+        "Islands · 高对比绿",
+        "Islands · 浅灰",
+        "Islands · 樱粉",
+        "Islands · 暖黄",
+        "Islands · 经典深色",
+        "Islands · 深海蓝",
+        "Islands · 暖咖啡",
+        "Islands · 深青绿",
+        "Islands · 暗紫"
+      ]
+    },
+    {
+      "file": "crates/agent-ui/src/lib/settings/settingsSearchIndex.ts",
+      "reason": "Chinese search aliases help find settings; displayed labels are translated separately.",
+      "literals": [
+        "配色",
+        "主题",
+        "咖啡",
+        "暖色",
+        "明亮",
+        "樱粉",
+        "暗紫",
+        "深海蓝",
+        "明暗",
+        "跟随系统"
+      ]
     }
   ],
   "deferred": [
@@ -389,151 +430,6 @@
       "reason": "owned by parallel work; migrate after merge",
       "literals": [
         "退出 LiveAgent 失败"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/chatDraft.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "项目目录未选择，无法发送大段粘贴内容。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/chatEventUtils.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "已取消"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/constants.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "分享会话"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/gatewayChatCommandActions.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "Agent 已切换，已取消发送本次大段粘贴内容。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/gatewayConversationActions.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "编辑后重发失败"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/hooks/useGatewaySettingsSync.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "缓存桌面端设置失败。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/hooks/useGatewaySharedHistory.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "读取已分享历史列表失败",
-        "Gateway 尚未连接，无法读取分享状态。",
-        "读取分享状态失败",
-        "开启分享失败",
-        "关闭分享失败",
-        "更新分享脱敏设置失败",
-        "Gateway 尚未连接，无法关闭分享。",
-        "Gateway 尚未连接，无法更新分享脱敏设置。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/hooks/useGatewayWorkspaceProjects.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "网关未连接。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/app/hooks/usePendingUploads.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "请先选择或创建会话后再上传文件。",
-        "上传目标已失效，已忽略本次导入的文件",
-        "所选文件均无法导入：",
-        "以下文件已跳过：",
-        "导入文件失败",
-        "无法读取剪贴板中的文件，请尝试拖拽或点击上传。",
-        "读取剪贴板文件失败"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/adminApi.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "请输入管理 Token。",
-        "加载 Agent 目录失败。",
-        "签发凭证失败。",
-        "签发响应缺少凭证明文。",
-        "修改客户端名称失败。",
-        "删除客户端失败。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/chatUi.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "执行结果",
-        "工具执行结果",
-        "Request failed：",
-        "历史消息解析失败：",
-        "历史消息载荷不是数组，无法渲染。",
-        "会话",
-        "新对话"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/gatewaySocketRpc.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "SSH 设置已在另一端更新，已刷新为最新状态，请重新提交。"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/historyShare.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "分享链接无效",
-        "分享链接不存在或已关闭",
-        "读取分享会话失败"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/uploadDirectory.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "文件夹名称不能为空。",
-        "文件夹为空，无法导入。",
-        "导入文件夹失败",
-        "导入文件夹失败：服务端未返回目录路径"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/lib/uploadReadableFiles.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "（HTTP",
-        "）",
-        "文件过大，服务器拒绝接收（HTTP 413）。请压缩文件后重试，或调大反向代理的请求体大小限制。",
-        "项目目录未选择，无法导入文件。",
-        "导入文件失败"
-      ]
-    },
-    {
-      "file": "crates/agent-gateway/web/src/shims/tauriCore.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "未配置 Gateway Token"
       ]
     },
     {
@@ -859,13 +755,6 @@
       "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
       "literals": [
         "加载 skills 失败"
-      ]
-    },
-    {
-      "file": "crates/agent-ui/src/lib/ssh/scan.ts",
-      "reason": "Untranslated error or status text in a .ts module that reaches the interface; predates .ts scanning. Move to i18n.",
-      "literals": [
-        "无法定位用户目录。"
       ]
     },
     {

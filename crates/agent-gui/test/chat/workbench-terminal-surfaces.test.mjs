@@ -206,18 +206,18 @@ test("terminal panes move, swap focus, and close like conversations", () => {
   let layout = conversationRoot();
   layout = mustApply(layout, {
     type: "OPEN_PANE",
-    pane: sshTerminalPane("pane-ssh", "terminal-ssh"),
+    pane: localTerminalPane("pane-local", "terminal-local"),
     target: { kind: "pane-edge", paneId: "pane-conversation", edge: "right" },
   });
   layout = mustApply(layout, {
     type: "MOVE_PANE",
-    paneId: "pane-ssh",
+    paneId: "pane-local",
     target: { kind: "pane-edge", paneId: "pane-conversation", edge: "top" },
   });
-  assert.equal(layout.focusedPaneId, "pane-ssh");
+  assert.equal(layout.focusedPaneId, "pane-local");
   layout = mustApply(layout, { type: "FOCUS_PANE", paneId: "pane-conversation" });
-  layout = mustApply(layout, { type: "CLOSE_PANE", paneId: "pane-ssh" });
-  assert.equal(layout.panes["pane-ssh"], undefined);
+  layout = mustApply(layout, { type: "CLOSE_PANE", paneId: "pane-local" });
+  assert.equal(layout.panes["pane-local"], undefined);
   assert.equal(layout.focusedPaneId, "pane-conversation");
   assert.deepEqual(collectWorkbenchLayoutIssues(layout), []);
 });

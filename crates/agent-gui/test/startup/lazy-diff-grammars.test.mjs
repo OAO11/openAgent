@@ -40,7 +40,7 @@ test("the transform starts the diff highlighter without grammars and exposes a l
 });
 
 test("the desktop and WebUI builds both register the transform", () => {
-  for (const config of ["crates/agent-gui/vite.config.ts", "crates/agent-gateway/web/vite.config.ts"]) {
+  for (const config of ["crates/agent-gui/vite.config.ts"]) {
     const source = readFileSync(path.join(repoRoot, config), "utf8");
     assert.match(source, /plugins:\s*\[[^\]]*lazyDiffHighlightGrammars\(\)/, config);
   }

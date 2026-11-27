@@ -298,7 +298,7 @@ test("hosts wire the file scope and the quick-open shortcut", () => {
   assert.match(sidebar, /getFileSource=\{getCommandPaletteFiles\}/);
   for (const host of [
     "../../src/pages/ChatPage.tsx",
-    "../../../agent-gateway/web/src/app/GatewayAppView.tsx",
+
   ]) {
     const source = read(host);
     assert.match(source, /getCommandPaletteFiles=\{getCommandPaletteFiles\}/, host);

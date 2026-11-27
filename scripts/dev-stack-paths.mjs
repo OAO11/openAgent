@@ -17,8 +17,6 @@ export function missingDevDependency(repoRoot, service) {
           "crates/agent-gui/node_modules/vite/bin/vite.js",
           "crates/agent-gui/node_modules/@tauri-apps/cli/tauri.js",
         ]
-      : service === "webui"
-        ? ["crates/agent-gateway/web/node_modules/vite/bin/vite.js"]
-        : [];
+      : [];
   return entries.find((entry) => !existsSync(join(repoRoot, entry)));
 }

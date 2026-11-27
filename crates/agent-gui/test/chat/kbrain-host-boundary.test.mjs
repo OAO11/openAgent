@@ -22,13 +22,13 @@ test("K-brain capabilities disable the replaced desktop runtime", () => {
 
 // LA-4 (option A): the desktop mirrors its own K-brain runs to a paired Gateway so a WebUI
 // can watch them and answer their approvals; the replaced runtime stays off.
-test("the desktop host can mirror K-brain runs to the Gateway", () => {
+test("the desktop host keeps Gateway mirroring disabled", () => {
   const previous = globalThis.window;
   globalThis.window = { __TAURI_INTERNALS__: {} };
   try {
     assert.deepEqual(createTsModuleLoader().loadModule("src/lib/host.ts").liveAgentRuntimeCapabilities(), {
       frontendContext: false,
-      gatewayMirror: true,
+      gatewayMirror: false,
       checkpoints: false,
       trajectory: false,
     });

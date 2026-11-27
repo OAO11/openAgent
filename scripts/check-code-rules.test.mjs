@@ -251,7 +251,7 @@ test("perf scenarios report: medians per scenario and flagged slowdowns", () => 
 
 test("design tokens: checked sources skip tests, declarations and token files", () => {
   assert.equal(isDesignTokenSource("crates/agent-ui/src/components/ui/badge.tsx"), true);
-  assert.equal(isDesignTokenSource("crates/agent-gateway/web/src/app/App.css"), true);
+  assert.equal(isDesignTokenSource("crates/agent-gui/src/App.css"), true);
   assert.equal(isDesignTokenSource("crates/agent-ui/src/styles/tokens.css"), false);
   assert.equal(isDesignTokenSource("crates/agent-ui/src/styles/semantic-colors.css"), false);
   assert.equal(isDesignTokenSource("crates/agent-gui/src/env.d.ts"), false);
@@ -336,7 +336,7 @@ test("budget files are well formed", async () => {
   const read = (name) => JSON.parse(readFileSync(path.join(scriptsDir, "budgets", name), "utf8"));
   const bundle = read("bundle-size.json");
   assert.ok(bundle.tolerance > 0 && bundle.tolerance < 0.2);
-  assert.ok(bundle.apps.gui.startupJsGzip > 0 && bundle.apps.webui.startupJsGzip > 0);
+  assert.ok(bundle.apps.gui.startupJsGzip > 0);
   const files = read("file-size-allowlist.json");
   assert.equal(files.limit, 1500);
   for (const [file, lines] of Object.entries(files.files)) {

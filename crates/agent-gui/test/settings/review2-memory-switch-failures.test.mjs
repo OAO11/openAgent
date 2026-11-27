@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createWebModuleLoader } from "../../../agent-gateway/test/helpers/load-web-module.mjs";
+
 import { createDomTestEnv } from "../helpers/dom-test-env.mjs";
 
 function startKBrain() {
@@ -174,88 +174,5 @@ test("review2: a transient read failure while refreshing after another section's
     host.remove();
     env.cleanup();
     server.close();
-  }
-});
-
-test("review2: WebUI save accepted but its read-back failed leaves the other mounted switch showing the old state", async () => {
-  // The real WebUI adapter: updateSettings() writes over the Gateway socket and then calls
-  // getSettings(); a socket hiccup between the two rejects updateSettings after the write
-  // already landed in K-brain.
-  let doc = { customProviders: [], kbrainMemory: { enabled: true } };
-  let failNextRead = false;
-  const client = {
-    getSettings: async () => {
-      if (failNextRead) {
-        failNextRead = false;
-        throw new Error("gateway socket closed");
-      }
-      return doc;
-    },
-    updateSettings: async (update) => {
-      doc = { ...doc, ...update };
-      failNextRead = true;
-    },
-  };
-  const loader = createWebModuleLoader({
-    rootDir: fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url)),
-    mocks: {
-      "../lib/gatewaySocket": { getGatewayWebSocketClient: () => client },
-      "../lib/storage": { loadToken: () => "fixture" },
-      "../pages/settings/DevicesSection": { DevicesSection: () => null },
-      "@liveagent/ui/components/IconSet": { MonitorSmartphone: () => null },
-      "@liveagent/ui/lib/resourceHost": {
-        configureResourceHostCapabilities() {},
-        nativeResourceHostCapabilities: {},
-      },
-    },
-  });
-  const kbrain = loader.loadModule("src/agent-ui-adapters/settingsExtension.tsx")
-    .settingsHostAdapter.kbrain;
-
-  const toasts = [];
-  const env = await domEnv(toasts);
-  const { MemorySwitch } = env.loadModule("@liveagent/ui/pages/settings/memory/MemorySwitch.tsx");
-  const { waitFor, tick, toggle } = helpers(env);
-  // GatewayAppView mounts the memory hub with settingsHostAdapter.kbrain, and the Settings
-  // memory page gets the same adapter through settingsHost.kbrain.
-  const hubHost = document.body.appendChild(document.createElement("div"));
-  const settingsHost = document.body.appendChild(document.createElement("div"));
-  const hub = env.createRoot(hubHost);
-  const settings = env.createRoot(settingsHost);
-  try {
-    await env.act(async () => hub.render(env.React.createElement(MemorySwitch, { kbrain })));
-    await env.act(async () =>
-      settings.render(env.React.createElement(MemorySwitch, { kbrain })),
-    );
-    await waitFor(() => toggle(hubHost) && toggle(settingsHost), "both switches");
-
-    await env.act(async () => toggle(settingsHost).click());
-    await waitFor(
-      () => toggle(settingsHost).getAttribute("aria-busy") !== "true" &&
-        !toggle(settingsHost).hasAttribute("data-disabled"),
-      "settings save settles",
-    );
-    for (let i = 0; i < 5; i += 1) await tick();
-    assert.deepEqual(toasts, [], "a write that landed is not reported as a failed save");
-
-    assert.deepEqual(doc.kbrainMemory, { enabled: false }, "K-brain now has memory off");
-    assert.equal(
-      toggle(settingsHost).getAttribute("aria-checked"),
-      "false",
-      "the saving switch read the backend back",
-    );
-    assert.equal(
-      toggle(hubHost).getAttribute("aria-checked"),
-      "false",
-      "memory hub still shows memory ON: the rollback learned the backend changed but never notified the other switch",
-    );
-  } finally {
-    await env.act(async () => {
-      hub.unmount();
-      settings.unmount();
-    });
-    hubHost.remove();
-    settingsHost.remove();
-    env.cleanup();
   }
 });

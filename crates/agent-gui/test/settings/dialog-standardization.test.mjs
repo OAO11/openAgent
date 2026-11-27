@@ -17,7 +17,7 @@ const retainedCssSource = await Promise.all(
   [
     "../../../agent-ui/src/styles/base.css",
     "../../../agent-gui/src/index.css",
-    "../../../agent-gateway/web/src/index.css",
+
   ].map((file) => readFile(new URL(file, import.meta.url), "utf8")),
 ).then((sources) => sources.join("\n"));
 

@@ -48,16 +48,6 @@ test("Gateway sync carries the approval scope the desktop bar uses", async () =>
   assert.equal(pendingToolApprovalFromToolCall({ ...computerCall, arguments: settledArgs }), null, "settled approvals drop the markers");
 });
 
-test("both WebUI collectors rebuild bar items with the shared reader", () => {
-  for (const file of [
-    "../../../agent-gateway/web/src/app/hooks/useGatewayChatPresentation.tsx",
-    "../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx",
-  ]) {
-    const source = readFileSync(new URL(file, import.meta.url), "utf8");
-    assert.match(source, /pendingToolApprovalFromToolCall\(toolCall\)/, file);
-    assert.doesNotMatch(source, /readToolApprovalSummary\(toolCall\.arguments\)/, file);
-  }
-});
 
 test("a remote session-wide Computer Use prompt renders the scope wording, not a session menu", async () => {
   const item = await remoteItem({ summary: "click", sessionScope: "call:click", sessionWide: true });

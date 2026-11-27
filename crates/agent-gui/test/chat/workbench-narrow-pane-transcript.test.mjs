@@ -79,18 +79,3 @@ test("FloorNavRail clamps its panel to the container, not the viewport", () => {
   // 极窄 Pane 整条隐藏,而不是把标记列压在正文上。
   assert.match(source, /@max-\[280px\]:hidden/);
 });
-
-test("gateway transcript stage declares containment for the shared rail", () => {
-  const sources = [
-    read("../../../agent-gateway/web/src/app/GatewayAppView.tsx"),
-    read("../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx"),
-  ];
-
-  for (const source of sources) {
-    const stageClass = source.match(
-      /className="([^"]*\bgateway-transcript-stage\b[^"]*)"/,
-    );
-    assert.ok(stageClass, "gateway-transcript-stage class not found");
-    assert.match(stageClass[1], /(?:^|\s)@container(?:\s|$)/);
-  }
-});

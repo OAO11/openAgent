@@ -9,7 +9,7 @@ side = round(max(content.size) / 0.94)
 master = Image.new("RGBA", (side, side))
 master.alpha_composite(content, ((side-content.width)//2, (side-content.height)//2))
 icons = ROOT / "crates/agent-gui/src-tauri/icons"
-# Keep each platform's expected dimensions and regenerate all product rasters.
+# Regenerate the retained desktop icons; mobile icon families are not part of openAgent.
 for path in icons.rglob("*.png"):
     if "custom" in path.parts:
         continue

@@ -6,13 +6,9 @@ import { loadTranslationNamespaces } from "../helpers/translation-namespaces.mjs
 
 const loader = createTsModuleLoader();
 const categories = loader.loadModule("@liveagent/ui/lib/skills/clawHubCategories.ts");
-const webRoot = fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url));
+
 const hostTranslations = [
   ["GUI", hostTables(loader)],
-  [
-    "WebUI",
-    hostTables(createTsModuleLoader({ rootDir: webRoot })),
-  ],
 ];
 
 function classify(card) {

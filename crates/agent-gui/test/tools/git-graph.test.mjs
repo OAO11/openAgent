@@ -10,9 +10,7 @@ const laneColors = new Map([...graphStyleSource.matchAll(/(--git-review-graph-la
 const guiRoot = fileURLToPath(new URL("../..", import.meta.url));
 const graphModules = {
   gui: createTsModuleLoader().loadModule("@liveagent/ui/lib/git/gitGraph.ts"),
-  web: createTsModuleLoader({
-    rootDir: path.resolve(guiRoot, "..", "agent-gateway", "web"),
-  }).loadModule("@liveagent/ui/lib/git/gitGraph.ts"),
+
 };
 
 function simplifyRows(rows) {
@@ -402,17 +400,3 @@ for (const [surface, graph] of Object.entries(graphModules)) {
     ]);
   });
 }
-
-test("GUI and WebUI git graph modules stay in parity", () => {
-  const commits = [
-    { sha: "m", parents: ["a", "b"] },
-    { sha: "a", parents: ["r"] },
-    { sha: "b", parents: ["r"] },
-    { sha: "r", parents: [] },
-  ];
-
-  assert.deepEqual(
-    graphModules.gui.computeGitGraph(commits),
-    graphModules.web.computeGitGraph(commits),
-  );
-});

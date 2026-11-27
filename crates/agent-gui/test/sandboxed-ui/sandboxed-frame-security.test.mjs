@@ -13,7 +13,7 @@ const loader = createTsModuleLoader({ mocks: { "react/jsx-runtime": jsxRuntime }
 const { SandboxedFrame } = loader.loadModule("@liveagent/ui/components/sandboxed-ui/SandboxedFrame.tsx");
 
 const repoCrates = fileURLToPath(new URL("../../..", import.meta.url));
-const SOURCE_ROOTS = ["agent-ui/src", "agent-gui/src", "agent-gateway/web/src"].map((dir) => path.join(repoCrates, dir));
+const SOURCE_ROOTS = ["agent-ui/src", "agent-gui/src"].map((dir) => path.join(repoCrates, dir));
 
 function* sourceFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

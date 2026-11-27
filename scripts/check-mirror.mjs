@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // The v2 hosts consume agent-ui directly instead of maintaining byte copies.
-// Check the full existing UI boundary rules, both alias roots, and ownership of
+// Check the full existing UI boundary rules, the desktop alias root, and ownership of
 // the shared sidebar tree so a host-local shadow cannot bypass those updates.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -16,7 +16,7 @@ const boundary = spawnSync(process.execPath, [join(root, "scripts/check-ui-bound
 if (boundary.status !== 0) process.exit(boundary.status ?? 1);
 
 const shared = resolve(root, "crates/agent-ui/src");
-const hosts = ["crates/agent-gui", "crates/agent-gateway/web"];
+const hosts = ["crates/agent-gui"];
 for (const host of hosts) {
   const configPath = join(root, host, "tsconfig.json");
   const config = JSON.parse(readFileSync(configPath, "utf8"));
@@ -31,4 +31,4 @@ for (const host of hosts) {
     if (existsSync(shadow)) throw new Error(`${host}: duplicate shared sidebar module ${entry.name}`);
   }
 }
-console.log("Mirror check passed: full UI boundaries, both shared aliases, and sidebar single ownership.");
+console.log("Mirror check passed: full UI boundaries, the desktop shared alias, and sidebar single ownership.");

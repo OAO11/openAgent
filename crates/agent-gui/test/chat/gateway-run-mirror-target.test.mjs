@@ -35,7 +35,7 @@ test("the send path uses the shared check, not its own URL + token test", () => 
   assert.doesNotMatch(source, /settings\.remote\.token\.trim\(\) !== ""/);
 });
 
-test("the tray shows the Gateway status for a hosted Gateway", () => {
+test("the desktop tray does not expose retired Gateway status", () => {
   const source = readFileSync(new URL("../../src/lib/tray/trayMenu.ts", import.meta.url), "utf8");
-  assert.match(source, /isRemoteSettingsConfigured\(input\.remote\)/);
+  assert.doesNotMatch(source, /isRemoteSettingsConfigured\(input\.remote\)/);
 });

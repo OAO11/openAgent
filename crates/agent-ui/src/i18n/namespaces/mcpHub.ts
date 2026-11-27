@@ -5,7 +5,6 @@ import { registerTranslations } from "../hostTranslations";
 
 registerTranslations({
   "zh-CN": {
-    "mcpHub.title": "MCP 中心",
     "mcpHub.serverDisplayName": "显示名称",
     "mcpHub.serverDisplayNamePlaceholder": "可选",
     "mcpHub.serverDisplayNameHint": "仅用于显示，不影响工具名和权限规则",
@@ -162,7 +161,6 @@ registerTranslations({
     "settings.skillsScanComplete": "扫描完成",
   },
   "en-US": {
-    "mcpHub.title": "MCP Hub",
     "mcpHub.enabled": "Enabled",
     "mcpHub.add": "Add",
     "mcpHub.reconnect": "Reconnect",

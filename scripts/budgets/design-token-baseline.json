@@ -1,15 +1,6 @@
 {
-  "_comment": "Hard-coded styles that bypass the design tokens, per file and rule, recorded when the check was introduced. Checked by scripts/check-design-tokens.mjs: listed counts must not grow and new files must have none; `pnpm check:design-tokens --update` only lowers counts and drops entries. Do not add entries; use the semantic tokens and shared primitives instead (docs/design-system.md).",
+  "_comment": "Hard-coded styles that bypass the design tokens, per file and rule, recorded when the check was introduced. Checked by scripts/check-design-tokens.mjs: listed counts must not grow and new files must have none; `pnpm check:design-tokens --update` only lowers counts and drops entries. Do not add entries; use the semantic tokens and shared primitives instead .",
   "files": {
-    "crates/agent-gateway/web/src/app/UserMenu.tsx": {
-      "palette-color": 3
-    },
-    "crates/agent-gateway/web/src/lib/webStyleClasses.ts": {
-      "arbitrary-size": 3
-    },
-    "crates/agent-gateway/web/src/pages/LoginPage.tsx": {
-      "arbitrary-size": 3
-    },
     "crates/agent-gui/src/components/AppUpdateButton.tsx": {
       "palette-color": 4
     },

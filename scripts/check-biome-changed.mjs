@@ -9,7 +9,6 @@ const supportedExtensions = new Set([".css", ".js", ".json", ".jsonc", ".jsx", "
 const workspaces = {
   gui: { filter: "liveagent", root: "crates/agent-gui" },
   ui: { filter: "@liveagent/ui", root: "crates/agent-ui" },
-  webui: { filter: "@liveagent/gateway-webui", root: "crates/agent-gateway/web" },
 };
 
 function git(args, allowFailure = false) {
@@ -110,7 +109,7 @@ export function biomeInvocation(filter, files, ci = Boolean(process.env.CI)) {
 async function main() {
   const workspaceName = process.argv[2];
   const workspace = workspaces[workspaceName];
-  if (!workspace) throw new Error("workspace must be ui, gui, or webui");
+  if (!workspace) throw new Error("workspace must be ui or gui");
   const { base, files } = changedFiles(workspace.root);
   if (files.length === 0) {
     console.log(`${workspaceName}: no changed source files since ${base}; warning gate skipped.`);

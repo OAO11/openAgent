@@ -23,9 +23,7 @@ const workspaceDropCommitSource = readSource(
   "../../../agent-ui/src/lib/workbench/workspaceDropCommit.ts",
 );
 const chatPageSource = readSource("../../src/pages/ChatPage.tsx");
-const gatewayViewSource = readSource(
-  "../../../agent-gateway/web/src/app/GatewayAppView.tsx",
-);
+
 const localTerminalPaneSource = readSource(
   "../../../agent-ui/src/components/workbench/surfaces/LocalTerminalPaneSurface.tsx",
 );
@@ -48,14 +46,12 @@ test("pane frames are keyed by paneId and positioned with integer rects", () => 
 
 test("queue controls preserve pane focus and target their own conversation", () => {
   const composerSource = readSource("../../../agent-ui/src/pages/chat/ChatComposerBar.tsx");
-  const paneHostSource = readSource(
-    "../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx",
-  );
+
   assert.match(composerSource, /data-workbench-preserve-focus=""/);
   assert.match(paneFrameSource, /closest\("\[data-workbench-preserve-focus\]"\)/);
   assert.match(paneFrameSource, /onFocusRequest\?\.\(\)/);
-  assert.match(paneHostSource, /onQueuePausedChange=\{handleQueuePausedChange\}/);
-  assert.match(paneHostSource, /api\.chatQueueSetPaused\(\s*conversationId,/);
+
+
 });
 
 test("dividers use pointer capture and commit once per gesture", () => {
@@ -97,7 +93,7 @@ test("workbench DOM access flows through the canvas ref", () => {
   assert.match(dragSessionSource, /canvasRef\.current/);
   assert.doesNotMatch(dragSessionSource, /document\.querySelector/);
   assert.doesNotMatch(chatPageSource, /querySelector\(\"\[data-workbench-canvas\]\"\)/);
-  assert.doesNotMatch(gatewayViewSource, /querySelector\(\"\[data-workbench-canvas\]\"\)/);
+
 });
 
 test("chat page keeps the legacy single-pane path behind the feature flag", () => {
@@ -138,23 +134,18 @@ test("desktop exposes the same unavailable-drop feedback path as Web", () => {
 });
 
 test("Desktop and Web render the same shared canvas, pane chrome, and drag ghost styling", () => {
-  for (const source of [chatPageSource, gatewayViewSource]) {
+  for (const source of [chatPageSource]) {
     assert.match(source, /<WorkbenchCanvas/);
     assert.match(source, /<PaneChrome/);
   }
   const dragGhostClass =
     /className="(layer-popover pointer-events-none fixed max-w-220px[^"]+)"/;
-  assert.equal(chatPageSource.match(dragGhostClass)?.[1], gatewayViewSource.match(dragGhostClass)?.[1]);
+
 
   const blockedBannerClass =
     /className="(flex shrink-0 items-center gap-2 border-b border-warning\/30[^"]+)"/;
-  const gatewayPaneHostSource = readSource(
-    "../../../agent-gateway/web/src/app/workbench/GatewayConversationPaneHost.tsx",
-  );
-  assert.equal(
-    chatPageSource.match(blockedBannerClass)?.[1],
-    gatewayPaneHostSource.match(blockedBannerClass)?.[1],
-  );
+
+
 });
 
 test("archived and missing workspaces block panes and never rebind the dock", () => {

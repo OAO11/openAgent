@@ -108,16 +108,16 @@ test("composer transient text exposes an anchored marker transaction", () => {
   assert.match(transient, /clearTransientText\(options\?\.preserveLastText === true\)/);
 });
 
-test("transient cleanup protects mention nodes and locks composer controls during STT", () => {
+test("transient cleanup protects mentions and disabled composer controls", () => {
   const composer = composerSource(sourceRoots[0]);
   assert.match(composer, /clearTransientText\(false\);[\s\S]*?setBusy\(false\)/);
   assert.match(composer, /closestComposerChipFromNode/);
   const bar = source(new URL("../../../agent-ui/src/pages/chat/", import.meta.url), "ChatComposerBar.tsx");
-  assert.match(bar, /disabled=\{isInputDisabled \|\| stt\.active\}/);
+  assert.match(bar, /disabled=\{isInputDisabled\}/);
   assert.match(bar, /disabled=\{controlsDisabled\}/);
   assert.match(
     bar,
-    /const sendDisabled =\s*isInputDisabled \|\| sendBlocked \|\| stt\.active \|\| isUploadingFiles \|\| !hasSendableDraft/,
+    /const sendDisabled =\s*isInputDisabled \|\| sendBlocked \|\| isUploadingFiles \|\| !hasSendableDraft/,
   );
   // A host that cannot deliver right now (reconnecting) blocks Enter too,
   // so the draft is never cleared into the void.

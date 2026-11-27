@@ -27,8 +27,6 @@ dist
 dist-ssr
 target
 *.local
-.vscode
-target
 bin
 # Generated Tauri external binary and local locked-artifact cache
 crates/agent-gui/src-tauri/binaries/
@@ -38,8 +36,7 @@ crates/agent-gui/src-tauri/binaries/
 chatroom
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea
 .DS_Store
 ._*
@@ -53,9 +50,6 @@ workspace.zip
 
 # Debug symbols (MSVC)
 *.pdb
-
-# Desktop Gateway sidecars are built from this checkout before Tauri dev/build.
-/crates/agent-gui/src-tauri/binaries/
 
 # Local workflow artifacts
 /.trellis
@@ -73,3 +67,11 @@ workspace.zip
 .env.*
 !**/.env.example
 crates/agent-gui/src-tauri/tauri.version.generated.conf.json
+
+# Generated diagnostics, test results and tooling caches
+.codegraph/
+coverage/
+playwright-report/
+test-results/
+__pycache__/
+*.pyc

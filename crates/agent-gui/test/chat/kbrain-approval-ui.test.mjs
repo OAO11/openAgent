@@ -183,10 +183,10 @@ test("both hosts read the marker: the desktop from its store, WebUI from the syn
   assert.deepEqual(guiAdapter.usePermissionAutoResolved("gui-call", {}), { source: "rule", rule: "Bash(ls:*)" });
   assert.equal(guiAdapter.usePermissionAutoResolved("other", {}), null);
 
-  const web = createTsModuleLoader({ rootDir: fileURLToPath(new URL("../../../agent-gateway/web/", import.meta.url)), mocks: { react } });
-  const webAdapter = web.loadModule("src/agent-ui-adapters/assistantBubble.ts");
-  assert.deepEqual(webAdapter.usePermissionAutoResolved("x", { __toolPermissionAutoResolved: { source: "read_only" } }), { source: "read_only" });
-  assert.equal(webAdapter.usePermissionAutoResolved("x", { command: "ls" }), null);
+
+
+
+
 });
 
 test("an edit approval renders K-brain's diff rows with line numbers and the cut note", async () => {

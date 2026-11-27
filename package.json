@@ -38,7 +38,8 @@
     "test:e2e:desktop": "pnpm --filter @liveagent/desktop-e2e test",
     "dev": "pnpm --filter liveagent tauri dev",
     "preview:build": "pnpm --filter liveagent tauri build --debug --no-bundle",
-    "build": "pnpm --filter liveagent tauri build"
+    "build": "pnpm --filter liveagent tauri build",
+    "check:source-scope": "node scripts/check-source-scope.mjs"
   },
   "pnpm": {
     "overrides": {

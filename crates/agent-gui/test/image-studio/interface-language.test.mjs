@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { createWebModuleLoader } from "../../../agent-gateway/test/helpers/load-web-module.mjs";
+import { createTsModuleLoader as createWebModuleLoader } from "../helpers/load-ts-module.mjs";
 import {
   parseTypeScriptSource,
   walkSyntaxTree,
@@ -321,20 +321,4 @@ test("controller notices, validation and tones follow the translator without a n
   } finally {
     controller.dispose();
   }
-});
-
-test("WebUI host notices follow the interface language", async () => {
-  const web = createWebModuleLoader();
-  const { gatewayImageErrorNotice } = web.loadModule("src/agent-ui-adapters/imageStudio.ts");
-  const { ImageClientError } = web.loadModule("@liveagent/ui/lib/imaging/errors");
-  const { t: webT } = web.loadModule("@liveagent/ui/i18n/index");
-  const webEn = (key) => webT(key, "en-US");
-  const webZh = (key) => webT(key, "zh-CN");
-  for (const error of [new TypeError("offline"), new ImageClientError("IMAGE_IDENTITY_UNAVAILABLE"), new ImageClientError("IMAGE_UNAVAILABLE", 503)]) {
-    const text = gatewayImageErrorNotice(error, webEn);
-    assert.doesNotMatch(text, CJK, text);
-    assert.match(text, /IMAGE_[A-Z_]+/, "the code stays for diagnosis");
-  }
-  assert.equal(gatewayImageErrorNotice(new TypeError("offline"), webZh), "图像连接失败（IMAGE_NETWORK_ERROR）。");
-  assert.equal(gatewayImageErrorNotice(new ImageClientError("IMAGE_UNAVAILABLE", 503), webZh), "HTTP 503 · 图像模块不可用（IMAGE_UNAVAILABLE）");
 });

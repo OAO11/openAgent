@@ -44,6 +44,7 @@ npx.cmd --yes pnpm@10.32.1 preview:build
 npx.cmd --yes pnpm@10.32.1 typecheck:ui
 npx.cmd --yes pnpm@10.32.1 typecheck:gui
 npx.cmd --yes pnpm@10.32.1 check:ui-boundaries
+npx.cmd --yes pnpm@10.32.1 check:source-scope
 node scripts/generate-builtin-skills.mjs --check
 cargo test -p liveagent --lib openagent --locked
 ```
@@ -68,3 +69,5 @@ cargo test -p liveagent --lib openagent --locked
 - K-brain：Apache-2.0；见 `docs/upstream/K-brain-LICENSE`。
 - 内置提示词、Skills、Hooks、主题保留各自的许可、原始来源、锁定版本和说明，见 `docs/OPENAGENT_BUILTIN_DEVELOPMENT.md`、`resources/prompts`、`crates/agent-gui/src-tauri/prompt/skills`。
 - openAgent 图标使用项目提供的原始图片，见 `resources/branding`；`python scripts/generate-app-icons.py` 使用 Pillow 重新生成平台图标。
+
+源码目录、保留的兼容边界和本地清理约定见 [源码范围](docs/OPENAGENT_SOURCE_SCOPE.md)。

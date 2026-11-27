@@ -89,44 +89,13 @@ test("parseChatFileLink rejects external, dangerous, internal, and malformed tar
   assert.doesNotThrow(() => parseChatFileLink("file:///%E0%A4%A"));
 });
 
-test("Gateway chat file opens run off-loop with bounded host concurrency", () => {
-  const envelopeHandler = fs.readFileSync(
-    fileURLToPath(
-      new URL(
-        "../../src-tauri/src/services/gateway/envelope_handler.rs",
-        import.meta.url,
-      ),
-    ),
-    "utf8",
+test("desktop chat file opens enforce timeout and bounded host concurrency", () => {
+  const source = fs.readFileSync(
+    new URL("../../src-tauri/src/commands/workspace/chat_file_links.rs", import.meta.url), "utf8",
   );
-  const chatFileLinks = fs.readFileSync(
-    fileURLToPath(
-      new URL(
-        "../../src-tauri/src/commands/workspace/chat_file_links.rs",
-        import.meta.url,
-      ),
-    ),
-    "utf8",
-  );
-
-  const branch = envelopeHandler.slice(
-    envelopeHandler.indexOf("Payload::ChatFileOpen"),
-    envelopeHandler.indexOf("Payload::FsWriteText"),
-  );
-  assert.match(branch, /tauri::async_runtime::spawn/);
-  assert.match(branch, /let sender = self\.current_outbound_sender\(\)\?/);
-  assert.match(branch, /send_agent_envelope_to\(sender, envelope\)/);
-  assert.ok(
-    branch.indexOf("tauri::async_runtime::spawn") <
-      branch.indexOf("handle_chat_file_open(request, current_workdir).await"),
-  );
-  // K-brain conversations resolve their workdir through the desktop's own
-  // session record; the WebUI-supplied workdir is never the link base.
-  assert.match(branch, /kbrain_conversation_workdir\(lookup_id, conversation_id\)/);
-  assert.doesNotMatch(branch, /request\.workdir/);
-  assert.match(chatFileLinks, /tokio::time::timeout\(CHAT_FILE_OPEN_TIMEOUT/);
-  assert.match(chatFileLinks, /CHAT_FILE_OPEN_SEMAPHORE/);
-  assert.match(chatFileLinks, /let _permit = permit/);
+  assert.match(source, /tokio::time::timeout\(CHAT_FILE_OPEN_TIMEOUT/);
+  assert.match(source, /CHAT_FILE_OPEN_SEMAPHORE/);
+  assert.match(source, /let _permit = permit/);
 });
 
 test("the internal payload codec preserves locations and rejects malformed payloads", () => {

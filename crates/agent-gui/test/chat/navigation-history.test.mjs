@@ -58,7 +58,7 @@ test("workbench locations: saved conversations and visible hubs only", () => {
   assert.equal(at("skills-hub", "c1"), "view:skills-hub", "a hub wins over the conversation behind it");
 
   assert.deepEqual(nav.parseNavigationLocation("conversation:c1"), { kind: "conversation", conversationId: "c1" });
-  assert.deepEqual(nav.parseNavigationLocation("view:image-studio-hub"), { kind: "view", view: "image-studio-hub" });
+  assert.equal(nav.parseNavigationLocation("view:image-studio-hub"), null, "retired hubs cannot be reopened");
   assert.equal(nav.parseNavigationLocation("view:unknown-hub"), null);
   assert.equal(nav.parseNavigationLocation("settings"), null);
 
@@ -183,7 +183,7 @@ test("palette lists back / forward only while they can move", () => {
 test("both hosts wire the history into the header, the palette and the shortcuts", () => {
   for (const file of [
     new URL("../../src/pages/ChatPage.tsx", import.meta.url),
-    new URL("../../../agent-gateway/web/src/app/GatewayAppView.tsx", import.meta.url),
+
   ]) {
     const source = fs.readFileSync(file, "utf8");
     assert.match(source, /useNavigationHistory\(/);
@@ -194,5 +194,5 @@ test("both hosts wire the history into the header, the palette and the shortcuts
     new URL("../../../agent-ui/src/components/chat/ChatHistorySidebar.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(sidebar, /"navigateBack",\n\s+"navigateForward",/, "the sidebar dispatches the chords");
+  assert.match(sidebar, /"navigateBack",\r?\n\s+"navigateForward",/, "the sidebar dispatches the chords");
 });

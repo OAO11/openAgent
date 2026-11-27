@@ -13,7 +13,7 @@ import { parseTypeScriptSource, walkSyntaxTree } from "../../../../scripts/types
 // plain modules (a service's display label, an error message a hook shows).
 
 const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url));
-const roots = ["crates/agent-ui/src", "crates/agent-gui/src", "crates/agent-gateway/web/src"];
+const roots = ["crates/agent-ui/src", "crates/agent-gui/src"];
 const SKIPPED_DIRECTORIES = new Set(["i18n", "node_modules", "gen", "test", "tests", "__tests__"]);
 // CJK symbols and punctuation, CJK ideographs (incl. extension A), full-width forms.
 const CJK = /[　-〿㐀-鿿＀-￯]/;

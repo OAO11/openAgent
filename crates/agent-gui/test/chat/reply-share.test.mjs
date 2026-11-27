@@ -65,8 +65,8 @@ test("assistant action bar exposes share inside the hover chrome and both hosts 
   assert.match(assistantFn, /<AssistantReplyShareDialog source=\{shareSource\}/);
 
   const desktop = read("../../src/pages/chat/transcript/RowActions.tsx");
-  const gateway = read("../../../agent-gateway/web/src/components/GatewayTranscript.tsx");
-  for (const host of [desktop, gateway]) {
+
+  for (const host of [desktop]) {
     assert.match(host, /shareSource=\{shareSource\}/);
     assert.match(host, /prompt: retryPrompt/);
   }

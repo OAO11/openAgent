@@ -175,47 +175,6 @@ test("global history API invokes the dedicated chat history command", async () =
   ]);
 });
 
-test("Gateway shim forwards global history search without a workdir scope", async () => {
-  const calls = [];
-  const gatewayRoot = fileURLToPath(new URL("../../../agent-gateway/web", import.meta.url));
-  const { invoke } = createTsModuleLoader({
-    rootDir: gatewayRoot,
-    mocks: {
-      "../lib/gatewaySocket": {
-        getGatewayWebSocketClient(token) {
-          assert.equal(token, "gateway-token");
-          return {
-            async memoryManage(payload) {
-              calls.push(payload);
-              return { matches: [] };
-            },
-          };
-        },
-      },
-      "../lib/storage": {
-        loadToken() {
-          return "gateway-token";
-        },
-      },
-      "./browserPathPrompt": {
-        async promptPathInBrowser() {
-          throw new Error("path prompt must not be used by history search");
-        },
-      },
-    },
-  }).loadModule("src/shims/tauriCore");
-
-  assert.deepEqual(
-    await invoke("chat_history_search", { args: { query: "global", limit: 12 } }),
-    { matches: [] },
-  );
-  assert.deepEqual(calls, [
-    {
-      command: "chat_history_search",
-      args: { query: "global", limit: 12 },
-    },
-  ]);
-});
 
 test("desktop K-brain history search maps backend session ids to local conversation ids", async () => {
   const calls = [];

@@ -48,7 +48,7 @@ const STATES = [
   { lang: "zh-CN", goal: "waiting" },
   { lang: "en-US", goal: "active", editing: true },
 ];
-const CASES = ["desktop", "web"].flatMap((surface) =>
+const CASES = ["desktop"].flatMap((surface) =>
   STATES.flatMap((state) => [1280, 390, 320].map((width) => ({ surface, width, ...state }))),
 );
 const key = (c) => `${c.surface}|${c.lang}|${c.goal}${c.editing ? "+edit" : ""}|${c.width}`;

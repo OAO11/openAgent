@@ -40,7 +40,7 @@ function sourceImports(source, path) {
 }
 
 test("workspace and frontend manifests do not install the replaced model runtime", () => {
-  for (const path of ["package.json", "crates/agent-gui/package.json", "crates/agent-gateway/web/package.json", "crates/agent-ui/package.json"]) {
+  for (const path of ["package.json", "crates/agent-gui/package.json",  "crates/agent-ui/package.json"]) {
     const manifest = JSON.parse(readFileSync(join(root, path), "utf8"));
     for (const group of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       for (const [dependency, version] of Object.entries(manifest[group] ?? {})) {
@@ -56,7 +56,7 @@ test("pnpm lockfile contains no replaced model runtime importers, packages, or s
 });
 
 test("frontend source does not import or re-export the replaced model runtime", () => {
-  for (const directory of ["crates/agent-gui/src", "crates/agent-ui/src", "crates/agent-gateway/web/src"]) {
+  for (const directory of ["crates/agent-gui/src", "crates/agent-ui/src"]) {
     for (const path of sourceFiles(join(root, directory))) {
       for (const specifier of sourceImports(readFileSync(path, "utf8"), path)) {
         assert.doesNotMatch(specifier, forbiddenPackage, path);
