@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/Stack-Cairn/K-brain",
+  "sourceRevision": "02cd80037809790478281e986a2d3b1004737c32",
+  "protocol": "kbrain.agent.v1",
+  "requiredBackendFlags": [
+    "-parent-stdio",
+    "-data-dir",
+    "-legacy-desktop-dir",
+    "-prepare-storage"
+  ],
+  "artifactPrefix": "kbrain-source-",
+  "platforms": {
+    "aarch64-apple-darwin": {
+      "goos": "darwin",
+      "goarch": "arm64",
+      "assets": {
+        "backend": "k-brain-darwin-arm64",
+        "computer": "k-brain-computer-darwin-arm64"
+      }
+    },
+    "x86_64-apple-darwin": {
+      "goos": "darwin",
+      "goarch": "amd64",
+      "assets": {
+        "backend": "k-brain-darwin-x64",
+        "computer": "k-brain-computer-darwin-x64"
+      }
+    },
+    "x86_64-unknown-linux-gnu": {
+      "goos": "linux",
+      "goarch": "amd64",
+      "assets": {
+        "backend": "k-brain-linux-x64",
+        "computer": "k-brain-computer-linux-x64"
+      }
+    },
+    "x86_64-pc-windows-msvc": {
+      "goos": "windows",
+      "goarch": "amd64",
+      "assets": {
+        "backend": "k-brain-windows-x64.exe",
+        "computer": "k-brain-computer-windows-x64.exe"
+      }
+    }
+  },
+  "downloads": {
+    "aarch64-apple-darwin": {
+      "sourceRevision": "02cd80037809790478281e986a2d3b1004737c32",
+      "assets": {
+        "backend": "k-brain-darwin-arm64",
+        "computer": "k-brain-computer-darwin-arm64"
+      },
+      "sha256": {
+        "backend": "9bba8e920dae09c9c2a84911b4f7a015334c8134a4bc57a114cd2c1b3e0e4665",
+        "computer": "4a17f70350ac7088dd240f4de1cad9284004b7f17b58dae00fa3a8d5e4d7d27b"
+      },
+      "urls": {
+        "backend": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-darwin-arm64",
+        "computer": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-computer-darwin-arm64"
+      }
+    },
+    "x86_64-apple-darwin": {
+      "sourceRevision": "02cd80037809790478281e986a2d3b1004737c32",
+      "assets": {
+        "backend": "k-brain-darwin-x64",
+        "computer": "k-brain-computer-darwin-x64"
+      },
+      "sha256": {
+        "backend": "54b6042a3afaf5aef6382e633883a9330f5c787e9d10e226705cf15b3a869393",
+        "computer": "3b32d0034eecd8eaeaf64c45eb2ad706339fc3b90d8699f62ddcbfc12a94c5e2"
+      },
+      "urls": {
+        "backend": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-darwin-x64",
+        "computer": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-computer-darwin-x64"
+      }
+    },
+    "x86_64-unknown-linux-gnu": {
+      "sourceRevision": "02cd80037809790478281e986a2d3b1004737c32",
+      "assets": {
+        "backend": "k-brain-linux-x64",
+        "computer": "k-brain-computer-linux-x64"
+      },
+      "sha256": {
+        "backend": "a1f772c8e733dcb5b0340a5bbfc2712683ea3c2e21f0c0fd1c36f1018ca38d4d",
+        "computer": "e9d0d3848c873216aed563693de4c2dba08b61d83713de330ddf25cb326736b1"
+      },
+      "urls": {
+        "backend": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-linux-x64",
+        "computer": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-computer-linux-x64"
+      }
+    },
+    "x86_64-pc-windows-msvc": {
+      "sourceRevision": "02cd80037809790478281e986a2d3b1004737c32",
+      "assets": {
+        "backend": "k-brain-windows-x64.exe",
+        "computer": "k-brain-computer-windows-x64.exe"
+      },
+      "sha256": {
+        "backend": "4be3c5e68f5596fed2f6a3392ef491030bbba3f3826ac7c614f50e4bdf9b0edf",
+        "computer": "d8c9742c394b3151c7303765738d6e237e1d5738b47fd938cb07b5147c2d9e24"
+      },
+      "urls": {
+        "backend": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-windows-x64.exe",
+        "computer": "https://github.com/Stack-Cairn/K-brain/releases/download/v0.107.47/k-brain-computer-windows-x64.exe"
+      }
+    }
+  },
+  "releaseTag": "v0.107.28",
+  "patches": [
+    {
+      "file": "openagent-roles.patch",
+      "sha256": "2e35a6ed2c12a8851e5f4970cc2e0c5518af1496c2be5a8a00607797de3b70b2"
+    }
+  ]
+}

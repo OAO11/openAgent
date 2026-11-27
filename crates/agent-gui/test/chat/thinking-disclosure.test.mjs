@@ -1,0 +1,298 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createDomTestEnv } from "../helpers/dom-test-env.mjs";
+import { createTsModuleLoader } from "../helpers/load-ts-module.mjs";
+
+const EmptyIcon = () => null;
+
+// The duration store is mocked so the settled label is deterministic; the
+// real module is unit-tested separately below.
+const durationState = { settledMs: null, byKey: {} };
+
+// The follow engine is unit-tested in scroll-follow-core.test.mjs; here we
+// only assert the disclosure hands it the right elements and gates.
+const scrollFollowCalls = [];
+
+const env = await createDomTestEnv({
+  mocks: {
+    "@liveagent/ui/components/Markdown": {
+      Markdown: ({ content }) => content,
+    },
+    "@liveagent/ui/lib/chat/thinkingDurations": {
+      resolveThinkingDurationMs: (key, active) =>
+        active ? null : (durationState.byKey[key] ?? durationState.settledMs),
+    },
+    "@liveagent/ui/lib/chat-scroll/useScrollFollow": {
+      useScrollFollow: (args) => {
+        scrollFollowCalls.push(args);
+        return { handle: {}, following: true };
+      },
+    },
+    "@liveagent/ui/i18n/index": {
+      useLocale: () => ({
+        locale: "zh-CN",
+        t: (key) =>
+          ({
+            "chat.thinking": "思考中",
+            "chat.thoughtFor": "思考了",
+            "chat.thoughtDuration": "思考 · {duration}",
+            "chat.thinkingProcess": "思考过程",
+            "chat.work.running": "处理中",
+            "chat.work.activity": "已处理",
+          })[key] ?? key,
+      }),
+    },
+    "@liveagent/ui/lib/shared/utils": {
+      cn: (...values) => values.filter(Boolean).join(" "),
+    },
+    "../../lib/shared/utils": {
+      cn: (...values) => values.filter(Boolean).join(" "),
+    },
+    "@liveagent/ui/components/IconSet": { ChevronDown: EmptyIcon },
+    "../../IconSet": {
+      Brain: () => React.createElement("svg", { "data-icon": "brain" }),
+      ChevronRight: EmptyIcon,
+      Loader2: (props) => React.createElement("svg", { "data-icon": "loader", ...props }),
+    },
+  },
+});
+const { React, act, createRoot } = env;
+
+const { ProcessDisclosureProvider } = env.loadModule(
+  "@liveagent/ui/components/chat/processDisclosure.tsx",
+);
+const { ThinkingDisclosure } = env.loadModule(
+  "@liveagent/ui/components/chat/assistant-bubble/ThinkingDisclosure.tsx",
+);
+
+const SEGMENT_KEY = "turn-1:r1:thinking-1";
+
+// Most tests exercise the detailed-progress view, where a streaming stretch
+// opens to show its reasoning; `detailedProgress: false` is the quiet default.
+function renderDisclosure(root, props = {}) {
+  const {
+    active = true,
+    detailedProgress = true,
+    segments = [{ key: SEGMENT_KEY, text: "先读取文件，再检查测试。" }],
+  } = props;
+  act(() => {
+    root.render(
+      React.createElement(
+        ProcessDisclosureProvider,
+        { expandByDefault: false, detailedProgress },
+        React.createElement(ThinkingDisclosure, {
+          segments,
+          activeKey: active ? (segments.at(-1)?.key ?? null) : null,
+        }),
+      ),
+    );
+  });
+}
+
+function click(element) {
+  act(() => element.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+}
+
+test("a streaming stretch opens in the detailed view, then folds into 思考 · Xs", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true });
+  const button = container.querySelector("button");
+  // The row never says 思考中: that wording belongs to the turn's status row.
+  assert.equal(button.textContent, "思考过程");
+  assert.equal(button.getAttribute("aria-expanded"), "true");
+  assert.match(container.textContent, /先读取文件/);
+  assert.ok(container.querySelector("[data-thinking-disclosure]"));
+  assert.ok(container.querySelector("[data-thinking-active]"));
+
+  durationState.settledMs = 23_000;
+  renderDisclosure(root, { active: false });
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+  assert.equal(button.textContent, "思考 · 23s");
+  assert.equal(container.querySelector("[data-thinking-active]"), null);
+
+  act(() => root.unmount());
+});
+
+test("manual disclosure ownership survives the active-to-settled transition", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  // User expands a settled segment: later renders must not steal it back.
+  durationState.settledMs = 5_000;
+  renderDisclosure(root, { active: false });
+  const button = container.querySelector("button");
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+
+  click(button);
+  assert.equal(button.getAttribute("aria-expanded"), "true");
+  renderDisclosure(root, { active: false });
+  assert.equal(button.getAttribute("aria-expanded"), "true");
+
+  act(() => root.unmount());
+});
+
+test("collapsing a still-streaming segment sticks through settle", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true });
+  const button = container.querySelector("button");
+  click(button);
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+
+  renderDisclosure(root, { active: true });
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+
+  durationState.settledMs = 1_000;
+  renderDisclosure(root, { active: false });
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+
+  act(() => root.unmount());
+});
+
+test("a history-loaded segment without a measured duration reads 思考过程", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  durationState.settledMs = null;
+  renderDisclosure(root, { active: false });
+  const button = container.querySelector("button");
+  assert.match(button.textContent, /思考过程/);
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+
+  act(() => root.unmount());
+});
+
+test("a streaming segment pins its scroller through the follow engine, not column-reverse", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true });
+  const scroller = container.querySelector("[data-thinking-scroll]");
+  assert.ok(scroller);
+  // The CSS-only pin is unreliable in WebKit (no bottom anchoring while
+  // streaming, scrollTop <= 0 confuses nested-wheel detection).
+  assert.doesNotMatch(scroller.className, /flex-col-reverse/);
+  assert.match(scroller.className, /overflow-y-auto/);
+
+  const wiring = scrollFollowCalls.at(-1);
+  assert.equal(wiring.enabled, true);
+  assert.equal(wiring.viewport, scroller);
+  // The growth target must be the inner wrapper: once max-h clamps the
+  // scroller its own border box stops changing while scrollHeight grows.
+  assert.equal(wiring.content, scroller.firstElementChild);
+  assert.notEqual(wiring.content, scroller);
+  assert.equal(wiring.config.reattachZonePx, 0);
+
+  act(() => root.unmount());
+});
+
+test("scroll follow disengages once the segment settles or is collapsed", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true });
+  assert.equal(scrollFollowCalls.at(-1).enabled, true);
+
+  // User folds the streaming block: no pinning against a hidden body.
+  click(container.querySelector("button"));
+  assert.equal(scrollFollowCalls.at(-1).enabled, false);
+
+  click(container.querySelector("button"));
+  assert.equal(scrollFollowCalls.at(-1).enabled, true);
+
+  // Settled segments read top-down, even while the user keeps them open.
+  durationState.settledMs = 2_000;
+  renderDisclosure(root, { active: false });
+  assert.equal(container.querySelector("button").getAttribute("aria-expanded"), "true");
+  assert.equal(scrollFollowCalls.at(-1).enabled, false);
+
+  act(() => root.unmount());
+});
+
+test("a reasoning row never spins: brain icon and no shimmer while streaming or settled", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true });
+  assert.equal(container.querySelector('[data-icon="loader"]'), null);
+  assert.ok(container.querySelector('[data-icon="brain"]'));
+  assert.doesNotMatch(container.innerHTML, /shimmer|animate-spin/);
+
+  renderDisclosure(root, { active: false });
+  assert.equal(container.querySelector('[data-icon="loader"]'), null);
+  assert.ok(container.querySelector('[data-icon="brain"]'));
+
+  act(() => root.unmount());
+});
+
+test("the quiet view keeps a streaming stretch folded; its text is one click away", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+
+  renderDisclosure(root, { active: true, detailedProgress: false });
+  const button = container.querySelector("button");
+  assert.equal(button.getAttribute("aria-expanded"), "false");
+  assert.doesNotMatch(container.textContent, /先读取文件/);
+
+  click(button);
+  assert.equal(button.getAttribute("aria-expanded"), "true");
+  assert.match(container.textContent, /先读取文件/);
+
+  act(() => root.unmount());
+});
+
+test("consecutive reasoning segments fold into one row with their total duration", () => {
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const segments = [
+    { key: "turn-1:r1:thinking-1", text: "先读取文件。" },
+    { key: "turn-1:r2:thinking-1", text: "再检查测试。" },
+  ];
+
+  durationState.settledMs = null;
+  durationState.byKey = { "turn-1:r1:thinking-1": 2_000, "turn-1:r2:thinking-1": 3_500 };
+  renderDisclosure(root, { active: false, segments });
+  const buttons = container.querySelectorAll("button");
+  assert.equal(buttons.length, 1);
+  assert.equal(buttons[0].textContent, "思考 · 5s");
+
+  click(buttons[0]);
+  assert.match(container.textContent, /先读取文件。\s*再检查测试。/);
+  durationState.byKey = {};
+
+  act(() => root.unmount());
+});
+
+test.after(() => env.cleanup());
+
+// --- real duration tracker ---
+
+const { resolveThinkingDurationMs } = createTsModuleLoader().loadModule(
+  "@liveagent/ui/lib/chat/thinkingDurations.ts",
+);
+
+test("thinking durations settle once and stay stable across reads", () => {
+  assert.equal(resolveThinkingDurationMs("seg-1", true, 1_000), null);
+  // A later active read keeps the original start instead of restarting.
+  assert.equal(resolveThinkingDurationMs("seg-1", true, 2_500), null);
+  assert.equal(resolveThinkingDurationMs("seg-1", false, 4_000), 3_000);
+  assert.equal(resolveThinkingDurationMs("seg-1", false, 9_000), 3_000);
+  // A segment never observed streaming (history reload) has no duration.
+  assert.equal(resolveThinkingDurationMs("seg-2", false, 9_000), null);
+});
+
+test("a measured duration carries over when saved history replaces the live entries", () => {
+  const text = "The readme is short.\n\nNext I search the sources.";
+  assert.equal(resolveThinkingDurationMs("live:r2:thinking", true, 10_000, text), null);
+  assert.equal(resolveThinkingDurationMs("live:r2:thinking", false, 16_500, text), 6_500);
+  // History reload: new entry key, same reasoning (whitespace may differ).
+  assert.equal(
+    resolveThinkingDurationMs("history:msg-7:thinking", false, 20_000, "The readme is short. Next I search the sources."),
+    6_500,
+  );
+  // Different reasoning text stays untimed.
+  assert.equal(resolveThinkingDurationMs("history:msg-8:thinking", false, 20_000, "Something else."), null);
+});

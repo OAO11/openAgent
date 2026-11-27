@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        let theme = "light";
+        let colorTheme = "default";
+        /* falcon-boot:start */
+        const falconModes = {"falcon-bean-green":"light","falcon-buff":"light","falcon-celadon":"light","falcon-green":"light","falcon-green-contrast":"light","falcon-grey":"light","falcon-pink":"light","falcon-yellow":"light","falcon-dark":"dark","falcon-dark-blue":"dark","falcon-dark-coffee":"dark","falcon-dark-darcula":"dark","falcon-dark-green":"dark","falcon-dark-violet":"dark","falcon-islands-bean-green":"light","falcon-islands-buff":"light","falcon-islands-celadon":"light","falcon-islands-green":"light","falcon-islands-green-contrast":"light","falcon-islands-grey":"light","falcon-islands-pink":"light","falcon-islands-yellow":"light","falcon-islands-dark":"dark","falcon-islands-dark-blue":"dark","falcon-islands-dark-coffee":"dark","falcon-islands-dark-darcula":"dark","falcon-islands-dark-green":"dark","falcon-islands-dark-violet":"dark"};
+        /* falcon-boot:end */
+        try {
+          const saved = JSON.parse(localStorage.getItem("liveagent.ui-settings.v1") || "null");
+          if (saved?.theme === "light" || saved?.theme === "dark" || saved?.theme === "system") {
+            theme = saved.theme;
+          }
+          if (saved?.colorTheme === "catppuccin") colorTheme = "catppuccin";
+          if (Object.hasOwn(falconModes, saved?.colorTheme)) colorTheme = saved.colorTheme;
+        } catch {}
+        document.documentElement.dataset.colorTheme = colorTheme;
+        const media = window.matchMedia("(prefers-color-scheme: dark)");
+        const apply = () => {
+          const presetMode = falconModes[colorTheme];
+          const dark = presetMode ? presetMode === "dark" : theme === "dark" || (theme === "system" && media.matches);
+          document.documentElement.classList.toggle("dark", dark);
+        };
+        apply();
+        // Follow OS theme changes while the boot screen is visible; once React
+        // mounts, App.tsx owns the `.dark` class and this listener is removed.
+        if (theme === "system" && !falconModes[colorTheme]) {
+          media.addEventListener?.("change", apply);
+          window.__liveagentBootThemeCleanup = () => media.removeEventListener?.("change", apply);
+        }
+      })();
+    </script>
+    <style>
+      /* Keep --background / --foreground and the body font stack in sync with
+         crates/agent-ui/src/styles/tokens.css (--app-font-family) so the boot
+         screen matches the main UI; the stylesheet redefines them once it loads. */
+      :root {
+        color-scheme: light;
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+      }
+      html.dark {
+        color-scheme: dark;
+        --background: 0 0% 9.4%;
+        --foreground: 0 0% 98%;
+      }
+      :root[data-color-theme="catppuccin"] {
+        --background: 220.0000 23.0769% 94.9020%;
+        --foreground: 233.7931 16.0221% 35.4902%;
+      }
+      :root[data-color-theme="catppuccin"].dark {
+        --background: 240.0000 21.0526% 14.9020%;
+        --foreground: 226.1538 63.9344% 88.0392%;
+      }
+      /* falcon-boot-colors:start */
+:root[data-color-theme="falcon-dark-blue"] {
+  --background: 214.0541 34.5794% 20.9804%;
+  --foreground: 0.0000 0.0000% 82.7451%;
+}
+
+:root[data-color-theme="falcon-dark-coffee"] {
+  --background: 354.5455 14.2857% 15.0980%;
+  --foreground: 0.0000 0.0000% 76.4706%;
+}
+
+:root[data-color-theme="falcon-dark-darcula"] {
+  --background: 204.0000 4.0000% 24.5098%;
+  --foreground: 0.0000 0.0000% 91.3725%;
+}
+
+:root[data-color-theme="falcon-dark-green"] {
+  --background: 189.6429 100.0000% 10.9804%;
+  --foreground: 0.0000 0.0000% 77.2549%;
+}
+
+:root[data-color-theme="falcon-dark-violet"] {
+  --background: 251.5385 25.4902% 20.0000%;
+  --foreground: 0.0000 0.0000% 77.2549%;
+}
+
+:root[data-color-theme="falcon-dark"] {
+  --background: 231.4286 14.8936% 18.4314%;
+  --foreground: 0.0000 0.0000% 77.6471%;
+}
+
+:root[data-color-theme="falcon-islands-dark-blue"] {
+  --background: 214.0541 34.5794% 20.9804%;
+  --foreground: 0.0000 0.0000% 82.7451%;
+}
+
+:root[data-color-theme="falcon-islands-dark-coffee"] {
+  --background: 354.5455 14.2857% 15.0980%;
+  --foreground: 0.0000 0.0000% 76.4706%;
+}
+
+:root[data-color-theme="falcon-islands-dark-darcula"] {
+  --background: 204.0000 4.0000% 24.5098%;
+  --foreground: 0.0000 0.0000% 91.3725%;
+}
+
+:root[data-color-theme="falcon-islands-dark-green"] {
+  --background: 189.6429 100.0000% 10.9804%;
+  --foreground: 0.0000 0.0000% 77.2549%;
+}
+
+:root[data-color-theme="falcon-islands-dark-violet"] {
+  --background: 251.5385 25.4902% 20.0000%;
+  --foreground: 0.0000 0.0000% 77.2549%;
+}
+
+:root[data-color-theme="falcon-islands-dark"] {
+  --background: 231.4286 14.8936% 18.4314%;
+  --foreground: 0.0000 0.0000% 77.6471%;
+}
+
+:root[data-color-theme="falcon-islands-bean-green"] {
+  --background: 127.8947 51.3514% 85.4902%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-islands-buff"] {
+  --background: 60.0000 23.8095% 95.8824%;
+  --foreground: 0.0000 0.0000% 20.0000%;
+}
+
+:root[data-color-theme="falcon-islands-celadon"] {
+  --background: 196.3636 25.5814% 91.5686%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-islands-green-contrast"] {
+  --background: 176.6667 40.9091% 91.3725%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-islands-green"] {
+  --background: 176.6667 40.9091% 91.3725%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-islands-grey"] {
+  --background: 180.0000 15.3846% 94.9020%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-islands-pink"] {
+  --background: 352.5000 66.6667% 97.6471%;
+  --foreground: 341.3115 100.0000% 11.9608%;
+}
+
+:root[data-color-theme="falcon-islands-yellow"] {
+  --background: 49.5652 100.0000% 95.4902%;
+  --foreground: 0.0000 0.0000% 20.0000%;
+}
+
+:root[data-color-theme="falcon-bean-green"] {
+  --background: 127.8947 51.3514% 85.4902%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-buff"] {
+  --background: 60.0000 23.8095% 95.8824%;
+  --foreground: 0.0000 0.0000% 20.0000%;
+}
+
+:root[data-color-theme="falcon-celadon"] {
+  --background: 196.3636 25.5814% 91.5686%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-green-contrast"] {
+  --background: 176.6667 40.9091% 91.3725%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-green"] {
+  --background: 176.6667 40.9091% 91.3725%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-grey"] {
+  --background: 180.0000 15.3846% 94.9020%;
+  --foreground: 199.2857 61.7647% 26.6667%;
+}
+
+:root[data-color-theme="falcon-pink"] {
+  --background: 352.5000 66.6667% 97.6471%;
+  --foreground: 341.3115 100.0000% 11.9608%;
+}
+
+:root[data-color-theme="falcon-yellow"] {
+  --background: 49.5652 100.0000% 95.4902%;
+  --foreground: 0.0000 0.0000% 20.0000%;
+}
+      /* falcon-boot-colors:end */
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        background: hsl(var(--background));
+      }
+      body {
+        overflow: hidden;
+        font-family: ui-sans-serif, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      .app-boot-screen {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: hsl(var(--background));
+      }
+      .app-boot-content {
+        display: flex;
+        width: min(480px, calc(100vw - 48px));
+        text-align: center;
+        color: hsl(var(--foreground));
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+      .app-boot-icon {
+        display: block;
+        width: 76px;
+        height: 76px;
+        filter: drop-shadow(0 10px 22px rgba(7, 45, 78, 0.14));
+      }
+      .app-boot-progress {
+        width: 128px;
+        height: 3px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: hsl(var(--foreground) / 0.08);
+      }
+      .app-boot-progress > span {
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: inherit;
+        background: hsl(var(--foreground) / 0.45);
+        animation: app-boot-progress 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      @keyframes app-boot-progress {
+        0% {
+          transform: translateX(-120%);
+        }
+        100% {
+          transform: translateX(320%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-boot-progress > span {
+          animation: none;
+          width: 100%;
+          opacity: 0.55;
+        }
+      }
+      .app-boot-title { margin: 0; font-size: 18px; font-weight: 600; }
+      .app-boot-detail, .app-boot-counts, .app-boot-source, .app-boot-time, .app-boot-waiting { margin: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+      .app-boot-detail { min-height: 42px; opacity: .7; }
+      .app-boot-statistics { width: 100%; min-height: 96px; display: grid; gap: 4px; }
+      .app-boot-source, .app-boot-time { opacity: .6; }
+      .app-boot-time { font-variant-numeric: tabular-nums; }
+      .app-boot-waiting { min-height: 42px; opacity: .75; }
+      .app-boot-retry { font: inherit; color: inherit; background: transparent; border: 1px solid hsl(var(--foreground) / .25); border-radius: 8px; padding: 8px 24px; cursor: pointer; }
+      .app-boot-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .app-boot-retry[hidden] { display: none; }
+      .app-boot-retry:disabled { cursor: default; opacity: .5; }
+      [data-boot-failed] .app-boot-progress > span { animation: none; opacity: .35; }
+    </style>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>openAgent</title>
+  </head>
+
+  <body>
+    <div id="root">
+      <div class="app-boot-screen" data-static-boot-shell="" aria-label="正在加载 openAgent" aria-busy="true">
+        <div class="app-boot-content">
+          <img class="app-boot-icon" src="/src-tauri/icons/icon-simple.png" alt="" />
+          <div class="app-boot-progress" aria-hidden="true"><span></span></div>
+          <h1 class="app-boot-title" data-boot-title="" aria-live="polite">正在启动 openAgent</h1>
+          <p class="app-boot-detail" data-boot-detail="">正在准备启动环境…</p>
+          <div class="app-boot-statistics">
+            <p class="app-boot-counts" data-boot-counts=""></p>
+            <p class="app-boot-source" data-boot-legacy=""></p>
+            <p class="app-boot-source" data-boot-pi=""></p>
+          </div>
+          <p class="app-boot-time" data-boot-elapsed="" aria-live="off"></p>
+          <p class="app-boot-waiting" data-boot-waiting="" aria-live="polite"></p>
+          <div class="app-boot-actions">
+            <button class="app-boot-retry" data-boot-retry="" type="button" hidden>重试</button>
+            <button class="app-boot-retry" data-boot-skip="" type="button" hidden>跳过，进入应用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (() => {
+        try {
+          const locale = JSON.parse(localStorage.getItem("liveagent.ui-settings.v1") || "null")?.locale;
+          if (locale === "en" || locale === "en-US") {
+            document.documentElement.lang = "en";
+            document.querySelector("[data-boot-title]").textContent = "Starting openAgent";
+            document.querySelector("[data-boot-detail]").textContent = "Preparing your startup environment…";
+            document.querySelector("[data-static-boot-shell]").setAttribute("aria-label", "openAgent startup progress");
+          }
+        } catch {}
+        performance.mark?.("liveagent:static-shell-ready");
+        const reveal = (attempt = 0) => {
+          const invoke = window.__TAURI_INTERNALS__?.invoke;
+          if (typeof invoke !== "function") {
+            if (attempt < 80) window.setTimeout(() => reveal(attempt + 1), 25);
+            return;
+          }
+          invoke("app_frontend_ready").catch(() => {
+            if (attempt < 80) window.setTimeout(() => reveal(attempt + 1), 25);
+          });
+        };
+        void document.documentElement.offsetHeight;
+        let revealed = false;
+        const revealOnce = () => {
+          if (revealed) return;
+          revealed = true;
+          performance.mark?.("liveagent:first-paint-ready");
+          reveal();
+        };
+        const revealFallback = window.setTimeout(revealOnce, 250);
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            window.clearTimeout(revealFallback);
+            revealOnce();
+          });
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "openAgent",
+  "version": "../package.json",
+  "identifier": "com.oao11.openagent",
+  "build": {
+    "beforeDevCommand": "pnpm prepare:kbrain && pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm prepare:kbrain && pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "openAgent",
+        "width": 1159,
+        "height": 857,
+        "minWidth": 480,
+        "minHeight": 600,
+        "visible": false,
+        "backgroundThrottling": "disabled"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "externalBin": [
+      "binaries/k-brain",
+      "binaries/k-brain-computer"
+    ],
+    "targets": "all",
+    "resources": {
+      "../browser-extension": "browser-extension",
+      "../../../LICENSE": "licenses/LiveAgent-MIT.txt",
+      "../../../docs/upstream/K-brain-LICENSE": "licenses/K-brain-Apache-2.0.txt",
+      "../../../resources/prompts/LICENSE.agency-agents": "licenses/agency-agents-MIT.txt"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "dmg": {
+        "background": "dmg/background.png",
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 180,
+          "y": 210
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 210
+        }
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "windows/installer-hooks.nsh"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlCQ0EyQjU1QkJFNTQwMDYKUldRR1FPVzdWU3ZLbXh2QUtxUldqSUQyYUJsWUFRRE1RbEdDU1NYWmRFcFo5RVY1R1MwYmJSZm0K",
+      "endpoints": []
+    }
+  },
+  "mainBinaryName": "openAgent"
+}

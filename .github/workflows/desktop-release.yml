@@ -1,0 +1,76 @@
+name: openAgent Windows Release
+
+# Local releases use scripts/release/build-windows.ps1. Start this workflow with
+# an existing, reviewed tag when a GitHub-hosted build is desired.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v0.1.1
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openagent-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.19.0'
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install protobuf compiler
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'protoc.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'protoc'
+          Invoke-WebRequest 'https://github.com/protocolbuffers/protobuf/releases/download/v34.0/protoc-34.0-win64.zip' -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          (Join-Path $destination 'bin') | Out-File -Append $env:GITHUB_PATH
+      - name: Install dependencies
+        run: npx --yes pnpm@10.32.1 install --frozen-lockfile --filter openagent-workspace --filter liveagent...
+      - name: Check product sources
+        run: |
+          node scripts/generate-builtin-skills.mjs --check
+          npx --yes pnpm@10.32.1 typecheck:ui
+          npx --yes pnpm@10.32.1 check:ui-boundaries
+      - name: Build signed Setup
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: ./scripts/release/build-windows.ps1 -Tag $env:RELEASE_TAG
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: openAgent-Windows-x64
+          path: dist/releases/${{ inputs.tag }}/*
+          if-no-files-found: error
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          $notes = "docs/releases/$env:RELEASE_TAG.md"
+          $assets = @(Get-ChildItem "dist/releases/$env:RELEASE_TAG" -File | Select-Object -ExpandProperty FullName)
+          $arguments = @('release', 'create', $env:RELEASE_TAG, '--verify-tag', '--title', "openAgent $env:RELEASE_TAG")
+          if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
+          if ($env:RELEASE_TAG.Contains('-')) { $arguments += '--prerelease' }
+          & gh @arguments @assets
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed; published releases are never overwritten automatically' }

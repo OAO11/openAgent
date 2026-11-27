@@ -1,0 +1,837 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-11-27",
+  "skills": [
+    {
+      "name": "openagent-development-workflow",
+      "title": "软件开发全流程",
+      "stage": "planning",
+      "sources": []
+    },
+    {
+      "name": "openagent-planning",
+      "title": "开发计划",
+      "stage": "planning",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/writing-plans/SKILL.md",
+          "sha256": "a6c67c1900064347c2a329990dd3c555657c51c3ec53b259a08aa01a2c26139a",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-architecture",
+      "title": "系统架构设计",
+      "stage": "architecture",
+      "sources": [
+        {
+          "localPath": "upstream/architect.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "agents/architect.md",
+          "sha256": "6b8e1e8bd274995f3949691731f4334820c061d3054eaea3be2ce163386d1f24",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/architecture-decision-records/SKILL.md",
+          "sha256": "263b20e81801aa5fa7e75eaec6c38345c0ac028ca0edbd67b1b9071c5fcbe11f",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-api-design",
+      "title": "API 与接口契约",
+      "stage": "backend",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/api-design/SKILL.md",
+          "sha256": "250e464413a13c0eb93cc73447b423df1f9aa8e4f80e5e68c41f895b2c33e352",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-backend",
+      "title": "后端工程",
+      "stage": "backend",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/backend-patterns/SKILL.md",
+          "sha256": "9b983d0297a983110fdfda8dce55d19b750ca3e53ef155d75a3eff740d3874b8",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-frontend",
+      "title": "前端界面与交互",
+      "stage": "frontend",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE.txt",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/frontend-design/LICENSE.txt",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/frontend-design/SKILL.md",
+          "sha256": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "openagent-react-performance",
+      "title": "React 性能优化",
+      "stage": "frontend",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/react-performance/SKILL.md",
+          "sha256": "ac76e8694d4f802a7bccc3c07a73ac68ace6d82a65ea10f10d8b7384dda61a8f",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-postgres",
+      "title": "PostgreSQL 数据库设计与优化",
+      "stage": "database",
+      "sources": [
+        {
+          "localPath": "upstream/history.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/CHANGELOG.md",
+          "sha256": "751ad110037c85d400018c9894716a04fa46357ff55c22b1169b280752e19e88",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "LICENSE",
+          "sha256": "b65e575eb4f04a13c187d64e958321298e2ab84d67aa8428819f362056ba292c",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/_contributing.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/_contributing.md",
+          "sha256": "191e039e7d94764e6073410b513b559f9a594e0fdf0252a30c2a2986df2ab3bc",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/_sections.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/_sections.md",
+          "sha256": "c9e992612b422c7122de0b7542ebc2450db283edaab08cfe86c6d657fcccccd5",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/_template.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/_template.md",
+          "sha256": "6299954250f212caabe339d752c3e5313a8e07d1a182a4e4b425baee91df1bd2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/advanced-full-text-search.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/advanced-full-text-search.md",
+          "sha256": "40c2606bbb4c4dce31308f201b24cc7f58c7df05b1d9c6856fe2b888d3b7cf28",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/advanced-jsonb-indexing.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/advanced-jsonb-indexing.md",
+          "sha256": "24cacf6a8bc35901dd566d24502ce8e57f810a5c196b897e61d52726e521d106",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/conn-idle-timeout.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/conn-idle-timeout.md",
+          "sha256": "630588902c00fcec59a5988cc5d042f76dcf2c923a535abfd8c47dca205eaed5",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/conn-limits.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/conn-limits.md",
+          "sha256": "11b2a67a7c7679cbbc5d807bbb17e69c98484a581d0c8b929c03408f412b81b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/conn-pooling.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/conn-pooling.md",
+          "sha256": "88cf086bf98ba865d2e9d0579974e1366b14157619d6a93e7da77be91084e4a5",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/conn-prepared-statements.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/conn-prepared-statements.md",
+          "sha256": "174e9332fe3dda5c99b2b00159fb1915ae36c00bab3a7882c14e73e4344e946e",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/data-batch-inserts.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/data-batch-inserts.md",
+          "sha256": "531933b82d6a622d0fae29e0ea80be6fe5d78655adf2804c271ea84a1930de37",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/data-n-plus-one.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/data-n-plus-one.md",
+          "sha256": "21a44905e5b16a42741892ec34bb1bfef124d049b140a76934a9acd0f46f5fc2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/data-pagination.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/data-pagination.md",
+          "sha256": "73c9fa10a3d439bedea0e11b640bd25bf30dd50f0d9006cf85baf7c3151543fa",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/data-upsert.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/data-upsert.md",
+          "sha256": "2612af83b20a2701dde30ef1f8d7efd26b7e9eef84717226b8f038a2d2150ff7",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/lock-advisory.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/lock-advisory.md",
+          "sha256": "c88d259dbf81c3771438f59a165f7eab8acd09999dd370bdf807521c73f35aab",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/lock-deadlock-prevention.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/lock-deadlock-prevention.md",
+          "sha256": "09aee46f51d7178c8e55fe056cd5a94a64ba2c122fe418e6900cd99f297b2347",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/lock-short-transactions.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/lock-short-transactions.md",
+          "sha256": "5aa7f61095916986d39644b446cdbcd2bacca7ef698a3bb50b3f82dd60207602",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/lock-skip-locked.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/lock-skip-locked.md",
+          "sha256": "6c45077f430f29cd9cd8f448c94d578e827e7bd023fcdaf717a756acb116fa4b",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/monitor-explain-analyze.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/monitor-explain-analyze.md",
+          "sha256": "4cb67ffbf8e57f2e5b380b0beb4242528b513723ce314a2c2ffcf083bd4203d7",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/monitor-pg-stat-statements.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/monitor-pg-stat-statements.md",
+          "sha256": "89dca99d4e894fcbdcac136be7ad9fbc03d1342904f065c1b198dc9cf495f098",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/monitor-vacuum-analyze.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/monitor-vacuum-analyze.md",
+          "sha256": "2892272011710eb49b3f185ec12f15ce9ce4c365792c672f6e2a9c90da426a1a",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/query-composite-indexes.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/query-composite-indexes.md",
+          "sha256": "73e42424e671f0266e74fdb220db3196790f69fb43e2b19c7b9483eb4971b554",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/query-covering-indexes.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/query-covering-indexes.md",
+          "sha256": "daf2a7f0477fb7357b62b5fb5b185b1995a77a186347e45cb780e25e7a7589b6",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/query-index-types.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/query-index-types.md",
+          "sha256": "472a74f22c2df203bd0154999b3a5a0187cca2ab3d9a3978e305bb7c32f1a282",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/query-missing-indexes.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/query-missing-indexes.md",
+          "sha256": "91ad8b0ff4365704b4830a7f077c6f140f7140fd5d3ce5cd0b92b160cf9e25f1",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/query-partial-indexes.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/query-partial-indexes.md",
+          "sha256": "6448982bc8558c6555284958edc331b29239c6a0130e6b4501dd6d4da607a6dd",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-constraints.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-constraints.md",
+          "sha256": "90e8efda3e9e81095e642911ad4aae2809d160f29414338fa997253238f510f8",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-data-types.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-data-types.md",
+          "sha256": "e01b58c14c7f3f65d8ead580b9a4fcf70b83baaab0f9a5f83c569c9fd113e8c8",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-foreign-key-indexes.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-foreign-key-indexes.md",
+          "sha256": "7587713d12a65a212365459b3d39e4717d8a79e4073b10bd62f1054d8192c0dd",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-lowercase-identifiers.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-lowercase-identifiers.md",
+          "sha256": "4bc80f70865f2390872591f326c8a6be6456a0aeb5a7e5a2475d7cd9d43059ab",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-partitioning.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-partitioning.md",
+          "sha256": "541e13fbeaf4bb1485c9059d4c9417dbdb766cf16f4237cd63a04ada7ec45b90",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/schema-primary-keys.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/schema-primary-keys.md",
+          "sha256": "3c8beabef82066f9a0838b926da0885117fd2d9a263aaf84cb5ca9e5f0d400e9",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/security-privileges.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/security-privileges.md",
+          "sha256": "095909274a4fb43df785d7144cf674eeb40284d2d45628f14af4108737b93663",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/security-rls-basics.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/security-rls-basics.md",
+          "sha256": "e04dd1a3a382aafdaaa73fe9f7976352acdde6e90c2a2470d281b94d4f44b096",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/security-rls-performance.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/references/security-rls-performance.md",
+          "sha256": "2e1faeca7d5746e246b1c78f9492fe2a9cfa41c4d7fa1e23c402d58fa18ea014",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "supabase/agent-skills",
+          "revision": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+          "path": "skills/supabase-postgres-best-practices/SKILL.md",
+          "sha256": "ad65e776f45e761bafc609d3f506c77c1032225aa65e0c4c02f241b8071e5855",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-database-migrations",
+      "title": "数据库迁移",
+      "stage": "database",
+      "sources": [
+        {
+          "localPath": "upstream/examples/postgres-add-column.sql",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/database-migrations/examples/postgres-add-column.sql",
+          "sha256": "6a55d77daa0c1277fa301d6dfd0da36f794bf75cfdb0b1f3cd18f1773aeab1c9",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/examples/postgres-column-rename.sql",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/database-migrations/examples/postgres-column-rename.sql",
+          "sha256": "67c65e3c824eac86c011b9830c76e4ffdb034fc44ae1ac291927e0f3562c86c1",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/database-migrations/SKILL.md",
+          "sha256": "34c3735e759063f8a0c5c36a4974af7baf99c05b206c761a4e42e9584f5fb34f",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-tdd",
+      "title": "测试驱动开发",
+      "stage": "testing",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/test-driven-development/SKILL.md",
+          "sha256": "64b03fce4aee5a97a93160cea8111f3ba13a17b7c001db4bd5836d67fd10705d",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/writing-good-tests.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/test-driven-development/writing-good-tests.md",
+          "sha256": "51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-debugging",
+      "title": "系统化故障排查",
+      "stage": "testing",
+      "sources": [
+        {
+          "localPath": "upstream/condition-based-waiting-example.ts",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/condition-based-waiting-example.ts",
+          "sha256": "40ae5ebe497fdf310200e43fe986552546d0a22837c0d39e855db1cfd33eb88e",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/condition-based-waiting.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/condition-based-waiting.md",
+          "sha256": "e89fec8400d6cd50f43407cec9fab50976ba4d55d0ec2eb51c0bd68036b54c26",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/defense-in-depth.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/defense-in-depth.md",
+          "sha256": "1e175fb86fc357e58c6aebf5441e481e1b7868b4380c0456b63a17eefbd18ba7",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/find-polluter.sh",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/find-polluter.sh",
+          "sha256": "dd7b8f13c4cc2a24b33ff87b18da9248f3e1c80a085c3316224f69ff0fa5c43c",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/root-cause-tracing.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/root-cause-tracing.md",
+          "sha256": "75b933b6a8c40bdb2031b10f21654395b56ec6ab6bc7b018c18d3fe57aeb7fb8",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "obra/superpowers",
+          "revision": "22f0b463e7a5e579904dd6211a520321035526f7",
+          "path": "skills/systematic-debugging/SKILL.md",
+          "sha256": "51c6435d98c83c42c96ba7c35725a0b2c376cd487fb1a4e6bd0ddbe7e33ef202",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-web-testing",
+      "title": "Web 端到端测试",
+      "stage": "testing",
+      "sources": [
+        {
+          "localPath": "upstream/examples/console_logging.py.txt",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/examples/console_logging.py",
+          "sha256": "ea46877289acb82da7e7ce59d0bc37c8977cd57e2a006d0c88d7a1c625bf95da",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/examples/element_discovery.py.txt",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/examples/element_discovery.py",
+          "sha256": "d63c89604a22f8845d724e95dda45db49b1bf57c25ce0a83afbb7b8da3d402f0",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/examples/static_html_automation.py.txt",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/examples/static_html_automation.py",
+          "sha256": "9d533aafb875ee3ab8b8ebf8f5b9003ac8d999da3d09b285cce252e623140064",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/LICENSE.txt",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/LICENSE.txt",
+          "sha256": "bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/scripts/with_server.py",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/scripts/with_server.py",
+          "sha256": "b0dcf4918935b795f4eda9821579b9902119235ff4447f687a30286e7d0925fd",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "anthropics/skills",
+          "revision": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+          "path": "skills/webapp-testing/SKILL.md",
+          "sha256": "51b7349e77ec63b7744a6f63647e7566a0b4d2e301121cc10e8c2113af6556a2",
+          "license": "Apache-2.0",
+          "licenseFile": "upstream/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "openagent-security-review",
+      "title": "应用安全审查",
+      "stage": "testing",
+      "sources": [
+        {
+          "localPath": "upstream/cloud-infrastructure-security.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/security-review/cloud-infrastructure-security.md",
+          "sha256": "7d9a83852475a9396e04c59c73df84ac24ee0f41322016de7c11c62138c2a8ca",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/security-review/SKILL.md",
+          "sha256": "58fe0f172e73c3f870cb2e65b9dc171316643808e95e8c1a2b6ea59fc3291760",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-performance",
+      "title": "系统性能诊断与优化",
+      "stage": "performance",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/references/sources.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/benchmark-optimization-loop/references/sources.md",
+          "sha256": "64889bf5b96207ed5ea40245540025572245ce561b863e92a884256d5862879a",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/benchmark-optimization-loop/SKILL.md",
+          "sha256": "b179eaae200cffb54eaa5ce7f2a0f21eaca081e76373248ed1f0e666b7def0bd",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-deployment",
+      "title": "CI/CD 与上线发布",
+      "stage": "deployment",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/deployment-patterns/SKILL.md",
+          "sha256": "b864abd1954570c4a469b7e1deb897e57858d25db2fd98d035ff7bca4a15b9b6",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "openagent-containers",
+      "title": "Docker 与运行环境",
+      "stage": "deployment",
+      "sources": [
+        {
+          "localPath": "upstream/LICENSE",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "LICENSE",
+          "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        },
+        {
+          "localPath": "upstream/SKILL.md",
+          "repository": "affaan-m/everything-claude-code",
+          "revision": "4adeee6732a12d1540f49a4d50a38ce8c97f9a53",
+          "path": "skills/docker-patterns/SKILL.md",
+          "sha256": "c0cedeb9b64d4468f5af3bb0a97659c654f0ceb916acbec867a29dc682dd633f",
+          "license": "MIT",
+          "licenseFile": "upstream/LICENSE"
+        }
+      ]
+    }
+  ]
+}

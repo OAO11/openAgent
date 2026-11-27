@@ -1,0 +1,37 @@
+/*
+ * @git-diff-view resets `color: initial` on everything inside widget and
+ * extend rows. That rule is unlayered, so it beats Tailwind's layered
+ * utilities and paints line-comment UI black (unreadable on primary buttons
+ * and in dark mode). Hand color back to the utility layers for our content.
+ */
+.diff-line-widget-wrapper [data-diff-line-comment],
+.diff-line-widget-wrapper [data-diff-line-comment] *,
+.diff-line-extend-wrapper [data-diff-line-comment],
+.diff-line-extend-wrapper [data-diff-line-comment] * {
+  color: revert-layer;
+}
+
+/* Named palettes use the same semantic surfaces as the rest of the workbench. */
+:root:is([data-color-theme="catppuccin"], [data-color-theme^="falcon-"]) .diff-tailwindcss-wrapper[data-theme] .diff-style-root {
+  --diff-border--: hsl(var(--border));
+  --diff-plain-content--: hsl(var(--background));
+  --diff-expand-content--: hsl(var(--muted));
+  --diff-plain-lineNumber--: hsl(var(--muted));
+  --diff-expand-lineNumber--: hsl(var(--muted));
+  --diff-plain-lineNumber-color--: hsl(var(--muted-foreground));
+  --diff-expand-lineNumber-color--: hsl(var(--muted-foreground));
+  --diff-add-content--: var(--success-surface);
+  --diff-del-content--: var(--destructive-surface);
+  --diff-add-lineNumber--: color-mix(in srgb, var(--success) 18%, hsl(var(--background)));
+  --diff-del-lineNumber--: color-mix(in srgb, var(--destructive) 18%, hsl(var(--background)));
+  --diff-add-content-highlight--: color-mix(in srgb, var(--success) 28%, hsl(var(--background)));
+  --diff-del-content-highlight--: color-mix(in srgb, var(--destructive) 28%, hsl(var(--background)));
+  --diff-hunk-content--: hsl(var(--muted));
+  --diff-hunk-content-color--: hsl(var(--foreground));
+  --diff-hunk-lineNumber--: hsl(var(--secondary));
+  --diff-hunk-lineNumber-hover--: hsl(var(--primary));
+  --diff-add-widget--: hsl(var(--primary));
+  --diff-add-widget-color--: hsl(var(--primary-foreground));
+  --diff-empty-content--: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}

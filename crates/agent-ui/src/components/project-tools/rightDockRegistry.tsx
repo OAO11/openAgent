@@ -1,0 +1,137 @@
+import { AppWindow, FolderTree, GitBranch, Plug } from "@liveagent/ui/components/IconSet";
+import type { ReactNode } from "react";
+import {
+  EmbeddedBrowserPanel,
+  FileTreePanel,
+  GitReviewPanel,
+  SandboxedPanelsPanel,
+} from "./lazyToolPanels";
+import { type RightDockToolContextValue, useRightDockToolContext } from "./RightDockContext";
+import type { RightDockSingletonTabKind } from "./rightDockModel";
+
+export type { RightDockSingletonTabKind } from "./rightDockModel";
+
+export type RightDockToolRenderInput = {
+  active: boolean;
+};
+
+export type RightDockToolDefinition = {
+  kind: RightDockSingletonTabKind;
+  titleKey: string;
+  createTitleKey: string;
+  descriptionKey: string;
+  closeKey: string;
+  projectRequired: boolean;
+  icon: (className: string) => ReactNode;
+  // Classes RightDockContent applies to the keep-alive wrapper while this tool
+  // is the active tab (inactive tools stay mounted behind "hidden").
+  containerActiveClassName: string;
+  isAvailable: (context: RightDockToolContextValue) => boolean;
+  render: (input: RightDockToolRenderInput) => ReactNode;
+};
+
+// Each tool body is a component of its own so it can read the dock context via
+// useRightDockToolContext; definition.render only instantiates it.
+function FileTreeTool(props: RightDockToolRenderInput) {
+  // FileTreePanel reads the dock context itself and keeps per-project state
+  // in an LRU bucket, so it deliberately has no projectPathKey remount key:
+  // staying mounted across project switches is what makes the bucket useful.
+  return <FileTreePanel active={props.active} />;
+}
+
+function GitReviewTool(props: RightDockToolRenderInput) {
+  const { active } = props;
+  const context = useRightDockToolContext();
+  // The panel reads everything else (clients, capabilities, git callbacks)
+  // from the right-dock tool context itself.
+  return <GitReviewPanel key={`${context.projectPathKey}:git-review`} active={active} />;
+}
+
+function BrowserTool(props: RightDockToolRenderInput) {
+  const { active } = props;
+  const context = useRightDockToolContext();
+  return (
+    <EmbeddedBrowserPanel
+      active={active}
+      client={context.clients.browser ?? null}
+      onOpenExternal={context.openExternal}
+    />
+  );
+}
+
+function projectToolAvailable(context: RightDockToolContextValue) {
+  return context.projectPathKey.trim() !== "";
+}
+
+export const RIGHT_DOCK_TOOL_DEFINITIONS: readonly RightDockToolDefinition[] = [
+  {
+    kind: "fileTree",
+    titleKey: "projectTools.fileTreeTitle",
+    createTitleKey: "projectTools.newFileTree",
+    descriptionKey: "projectTools.fileTreeDescription",
+    closeKey: "projectTools.closeFileTree",
+    projectRequired: true,
+    icon: (className) => <FolderTree className={className} />,
+    containerActiveClassName: "block",
+    isAvailable: projectToolAvailable,
+    render: (input) => <FileTreeTool active={input.active} />,
+  },
+  {
+    kind: "gitReview",
+    titleKey: "projectTools.gitReviewTitle",
+    createTitleKey: "projectTools.newGitReview",
+    descriptionKey: "projectTools.gitReviewDescription",
+    closeKey: "projectTools.closeGitReview",
+    projectRequired: true,
+    icon: (className) => <GitBranch className={className} />,
+    containerActiveClassName: "flex flex-col",
+    isAvailable: projectToolAvailable,
+    render: (input) => <GitReviewTool active={input.active} />,
+  },
+  {
+    kind: "browser",
+    titleKey: "projectTools.browserTitle",
+    createTitleKey: "projectTools.newBrowser",
+    descriptionKey: "projectTools.browserDescription",
+    closeKey: "projectTools.closeBrowserTab",
+    projectRequired: false,
+    icon: (className) => <AppWindow className={className} />,
+    containerActiveClassName: "flex flex-col",
+    isAvailable: (context) => Boolean(context.clients.browser),
+    render: (input) => <BrowserTool active={input.active} />,
+  },
+  {
+    kind: "plugins",
+    titleKey: "sandboxedUi.dock.title",
+    createTitleKey: "sandboxedUi.dock.open",
+    descriptionKey: "sandboxedUi.dock.description",
+    closeKey: "sandboxedUi.dock.close",
+    projectRequired: false,
+    icon: (className) => <Plug className={className} />,
+    containerActiveClassName: "flex flex-col",
+    isAvailable: (context) => Boolean(context.clients.plugins || context.clients.htmlPreviews),
+    render: (input) => <SandboxedPanelsTool active={input.active} />,
+  },
+];
+
+function SandboxedPanelsTool(props: RightDockToolRenderInput) {
+  const context = useRightDockToolContext();
+  const openFile = context.fileTree.onOpenFile;
+  return (
+    <SandboxedPanelsPanel
+      active={props.active}
+      plugins={context.clients.plugins ?? null}
+      previews={context.clients.htmlPreviews ?? null}
+      workdir={context.cwd}
+      onOpenFile={openFile ? (path) => openFile(path) : undefined}
+    />
+  );
+}
+
+const RIGHT_DOCK_TOOL_DEFINITION_BY_KIND = new Map(
+  RIGHT_DOCK_TOOL_DEFINITIONS.map((definition) => [definition.kind, definition]),
+);
+
+export function getRightDockToolDefinition(kind: RightDockSingletonTabKind) {
+  return RIGHT_DOCK_TOOL_DEFINITION_BY_KIND.get(kind);
+}

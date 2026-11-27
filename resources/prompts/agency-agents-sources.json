@@ -1,0 +1,62 @@
+{
+  "repository": "msitarzewski/agency-agents",
+  "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+  "templates": [
+    {
+      "id": "openagent-ai-runtime",
+      "source": "engineering/engineering-ai-engineer.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "f25a69aad25acd35dd1d62e33d5a814f4a26b075d90f968b4d778452e53924d8",
+      "characters": 7356
+    },
+    {
+      "id": "openagent-architect",
+      "source": "engineering/engineering-software-architect.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "b85121691776147bacde26673e68fbbacd6a7f0816d1ca8e203c264d25ce1d30",
+      "characters": 6432
+    },
+    {
+      "id": "openagent-backend",
+      "source": "engineering/engineering-backend-architect.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "ac717bde4848d7663fff8a3c7edc711fd119256de6a7ce38c036619372f42c99",
+      "characters": 11404
+    },
+    {
+      "id": "openagent-frontend",
+      "source": "engineering/engineering-frontend-developer.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "1ae4cc10b2e0163bd3ed921ad54080b865cd02e591becd8919b64b73fab06dad",
+      "characters": 10998
+    },
+    {
+      "id": "openagent-orchestrator",
+      "source": "specialized/agents-orchestrator.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "3f900ee286eba5a809388ecc22ad860c4a3ef9ed7ff25488e80eac18f3a0f317",
+      "characters": 15616
+    },
+    {
+      "id": "openagent-release",
+      "source": "engineering/engineering-devops-automator.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "1b67b3bdc6a076d42281e38bb811250eb04415bb241cdd4c3a7df38ecd20e88b",
+      "characters": 13690
+    },
+    {
+      "id": "openagent-reviewer",
+      "source": "engineering/engineering-code-reviewer.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "7509fcc3ea1dda46511b2801996305bf3d4a125576f9655ff0b63df25602f446",
+      "characters": 3004
+    },
+    {
+      "id": "openagent-tester",
+      "source": "testing/testing-test-automation-engineer.md",
+      "revision": "8ae6164602c95ca78828b148b9052460ee426885",
+      "sha256": "4299d038e88387546d645ccbe767b1dfdb7de10da55eba1ab103149972cd2b9b",
+      "characters": 12630
+    }
+  ]
+}
