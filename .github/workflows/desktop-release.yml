@@ -67,10 +67,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          $notes = "docs/releases/$env:RELEASE_TAG.md"
           $assets = @(Get-ChildItem "dist/releases/$env:RELEASE_TAG" -File | Select-Object -ExpandProperty FullName)
-          $arguments = @('release', 'create', $env:RELEASE_TAG, '--verify-tag', '--title', "openAgent $env:RELEASE_TAG")
-          if (Test-Path $notes) { $arguments += @('--notes-file', $notes) } else { $arguments += '--generate-notes' }
+          $arguments = @('release', 'create', $env:RELEASE_TAG, '--verify-tag', '--title', "openAgent $env:RELEASE_TAG", '--generate-notes')
           if ($env:RELEASE_TAG.Contains('-')) { $arguments += '--prerelease' }
           & gh @arguments @assets
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed; published releases are never overwritten automatically' }

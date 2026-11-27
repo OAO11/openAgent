@@ -16,7 +16,7 @@
 //     [--update] [--json out.json]
 // Build first (`pnpm build:gui`). `--update` rewrites the
 // budget entries of the measured apps with the current sizes; commit that
-// change deliberately (see docs/OPENAGENT_DEVELOPMENT.md).
+// change deliberately (see README.md).
 
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";

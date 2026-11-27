@@ -2,72 +2,64 @@
 
 ![openAgent](resources/branding/openagent-logo.png)
 
-基于 LiveAgent 桌面端和 K-brain 本地后端的 Windows Agent 工作台。当前正式版本：**v0.1.0**。
+基于 LiveAgent 桌面端和 K-brain 本地后端的 Windows Agent 工作台，使用 Tauri、React 和 Rust。后端直接使用 K-brain，产品面向本机工作区。
 
-## 安装和更新
+## 源码结构
 
-从本仓库 Releases 下载 `openAgent-v0.1.0-Windows-x64-Setup.exe`，安装到当前用户可写的目录，例如 `D:\software\openAgent`。
+- `crates/agent-gui`：桌面入口、Tauri 原生宿主、K-brain 适配、浏览器扩展和测试。
+- `crates/agent-ui`、`crates/virtual-core`：界面组件、主题和虚拟列表源码。
+- `patches/kbrain`：K-brain 产品补丁；固定上游版本和补丁 SHA-256 见 `scripts/release/kbrain.lock.json`。
+- `resources`：品牌、内置提示词和许可证；`src-tauri/prompt/skills` 中的 Markdown 是随应用加载的技能资源。
+- `scripts`、`.github/workflows`：开发检查、资源生成、构建和发布。
 
-- 安装包包含桌面程序、K-brain 和本机操作辅助程序；使用系统 WebView2，缺少时安装程序会联网安装运行时。
-- 正式版数据位于 **`<安装目录>\data`**，包括聊天、设置、Skills、记忆、界面缓存和检查报告。
-- 原地安装/更新保留 `data`；卸载默认保留，只有明确选择“删除应用数据”才删除。
-- 应用从 `OAO11/openAgent` Releases 检查更新，用 openAgent 专用公钥验证安装包。
-- 安装包尚未配置 Windows Authenticode 发布者证书；更新验证签名与 Windows 发布者证书是两种不同机制。
+Git 仅保留源码、运行资源、必要测试、依赖锁、构建配置、许可证和本说明。`docs`、工作记录、安装包、依赖目录、构建缓存、用户数据及私钥不提交；`pnpm check:source-scope` 检查提交文件范围。
 
-开发预览仍使用 `%USERPROFILE%\.openagent`，与正式版隔离；不会自动读取或搬移旧版及 LiveAgent 用户数据。已有内容可通过应用备份/导入迁移。
+## 开发与检查
 
-## 产品范围
-
-- 本机工作区、话题、模型供应商、工具审批、会话与记忆。
-- 可选择的外观主题，中文 Skills/MCP 浏览与翻译，内置开发流程 Skills 和 Hook 预设。
-- 工作区与子代理角色提示词，完整原始模板内容及来源记录。
-- 初始窗口 1159 × 857，右侧工作台默认收起，关闭窗口可保留到系统托盘。
-
-不提供远程控制、SSH、WebUI、云同步或插件商店。桌面直接使用 K-brain，不另建产品后端。部分上游兼容代码和包名保留用于后续维护，不代表产品对外开放这些功能。
-
-## 本地开发
-
-工具：Windows x64、Go 1.27.0、Rust/MSVC、Node.js、pnpm 10.32.1、protoc，以及 C++ Build Tools、WebView2、libclang。`LIBCLANG_PATH` 指向包含 `libclang.dll` 的目录。
+需要 Windows x64、Rust/MSVC、C++ Build Tools、WebView2、libclang，以及 `mise.toml` 中固定的 Node.js、pnpm、Go、protoc 等工具。`LIBCLANG_PATH` 指向包含 `libclang.dll` 的目录。
 
 ```powershell
 npx.cmd --yes pnpm@10.32.1 install --frozen-lockfile --filter openagent-workspace --filter liveagent...
 npx.cmd --yes pnpm@10.32.1 dev
-```
-
-首次构建会从锁定的 K-brain 提交应用产品补丁并编译本地制品；上游版本、补丁摘要、产物摘要均会校验。代码位于 `patches/kbrain`，锁文件为 `scripts/release/kbrain.lock.json`。
-
-```powershell
-# 更新唯一的本地预览版本，不生成安装包
+# 更新唯一的本地预览，不生成安装包
 npx.cmd --yes pnpm@10.32.1 preview:build
 .\target\debug\openAgent.exe
-# 检查
-npx.cmd --yes pnpm@10.32.1 typecheck:ui
-npx.cmd --yes pnpm@10.32.1 typecheck:gui
-npx.cmd --yes pnpm@10.32.1 check:ui-boundaries
-npx.cmd --yes pnpm@10.32.1 check:source-scope
-node scripts/generate-builtin-skills.mjs --check
-cargo test -p liveagent --lib openagent --locked
 ```
 
-请保留同目录的 `k-brain.exe`、`k-brain-computer.exe` 及资源。不要把 `data`、用户配置、API Key、签名私钥、`target`、`node_modules` 或构建缓存提交到 Git。
-
-## 发布
-
-详见 [Windows 安装与更新](docs/OPENAGENT_RELEASE.md)。本地构建：
+首次构建会下载锁定的 K-brain 源码、应用产品补丁并编译；不依赖相邻参考仓库的本地改动。构建依赖保存在 `node_modules`、`.liveagent` 和 `src-tauri/binaries`，不上传 Git。调整补丁时必须同步更新锁文件的摘要并重建后端。
 
 ```powershell
-.\scripts\release\build-windows.ps1 -Tag v0.1.0 `
+pnpm check:source-scope
+pnpm typecheck:ui
+pnpm typecheck:gui
+pnpm check:ui-boundaries
+pnpm check:script-tests
+pnpm test:gui
+cargo check --workspace --tests --locked
+node scripts/generate-builtin-skills.mjs --check
+```
+
+## 安装包与在线更新
+
+从本仓库 Releases 下载安装包。正式版数据位于 `<安装目录>\data`，开发预览默认使用 `%USERPROFILE%\.openagent`。安装目录应允许当前用户写入；升级及默认卸载保留数据，卸载时明确选择删除数据才清理。
+
+对已提交的版本创建并推送 `v<semver>` 标签后，可运行 GitHub Actions 的 **openAgent Windows Release**，或使用本地脚本：
+
+```powershell
+.\scripts\release\build-windows.ps1 -Tag v0.1.1 `
   -SigningKeyPath '<仓库外的私钥路径>' `
   -SigningPasswordPath '<仓库外的密码文件路径>'
 ```
 
-产物位于 `dist/releases/<tag>`：Setup、`.sig`、`latest.json` 和 `SHA256SUMS.txt`。GitHub Actions 的 **openAgent Windows Release** 可对已推送的标签手动构建并发布；签名凭据仅通过仓库 Secrets 提供。
+将 `dist/releases/<tag>` 中的 Setup、`.sig`、`latest.json` 和 `SHA256SUMS.txt` 发布到对应 Release。CI 通过仓库 Secrets 提供 `TAURI_SIGNING_PRIVATE_KEY` 和 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`；不覆盖已有 Release。发布说明由 GitHub 根据提交生成，不依赖仓库文档。
 
-## 来源和许可
+应用从 `OAO11/openAgent` Releases 检查更新，使用项目公钥验证安装包。Git 提交不会直接更新客户端，需发布更高版本的签名安装包。Setup 使用 NSIS 和系统 WebView2，缺少 WebView2 时联网安装运行时；更新签名不等同于 Windows 发布者证书。
 
-- LiveAgent：MIT；保留根目录 `LICENSE` 及 `docs/upstream` 中的上游说明。
-- K-brain：Apache-2.0；见 `docs/upstream/K-brain-LICENSE`。
-- 内置提示词、Skills、Hooks、主题保留各自的许可、原始来源、锁定版本和说明，见 `docs/OPENAGENT_BUILTIN_DEVELOPMENT.md`、`resources/prompts`、`crates/agent-gui/src-tauri/prompt/skills`。
-- openAgent 图标使用项目提供的原始图片，见 `resources/branding`；`python scripts/generate-app-icons.py` 使用 Pillow 重新生成平台图标。
+## 来源与许可证
 
-源码目录、保留的兼容边界和本地清理约定见 [源码范围](docs/OPENAGENT_SOURCE_SCOPE.md)。
+- LiveAgent：MIT，原始版权声明保留在根目录 `LICENSE`。
+- K-brain：Apache-2.0，完整文本位于 `resources/licenses/K-brain-LICENSE`，随安装包分发。
+- 提示词：`msitarzewski/agency-agents`；原文、固定版本及摘要见 `resources/prompts`，MIT 许可见 `LICENSE.agency-agents`。
+- 内置 Skills：来源、固定版本和文件摘要见 `crates/agent-gui/src-tauri/prompt/skills/catalog.json`，原始内容与许可证保留在各技能目录；Hooks 的来源和许可随脚本嵌入。
+- 主题：Catppuccin palette 1.8.0（`07d02aa110ef9eb7e7427afca5c73ba9cf7f8ebd`）和 `panxiaoan/falcon-jetbrains-themes`（`c3ddba2d8c71137e5191033df8e882b2936f8f7d`）。来源记录保存在主题源码中，完整 MIT 许可证位于 `crates/agent-gui/public/third-party`。
+- 应用图标：源图位于 `resources/branding`，使用 `python scripts/generate-app-icons.py` 及 Pillow 生成平台图标。

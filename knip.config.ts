@@ -1,6 +1,6 @@
 // knip configuration (unused files, exports and dependencies) for the pnpm
 // workspace. Run through scripts/check-knip.mjs, which compares the findings
-// with scripts/budgets/knip-baseline.json; see docs/testing/ci-checks.md.
+// with scripts/budgets/knip-baseline.json; see README.md.
 //
 // Two kinds of module references are invisible to a static import graph:
 //   - tests load TypeScript sources by path string through the module loaders

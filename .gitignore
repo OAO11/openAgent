@@ -75,3 +75,11 @@ playwright-report/
 test-results/
 __pycache__/
 *.pyc
+
+# Local documentation and optional repository administration are not published
+/docs/
+/README.zh-CN.md
+/.github/CONTRIBUTING.md
+/.github/ISSUE_TEMPLATE/
+/.github/pull_request_template.md
+/.github/release.yml

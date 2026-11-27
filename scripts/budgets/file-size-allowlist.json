@@ -1,5 +1,5 @@
 {
-  "_comment": "Source files in crates/ over `limit` lines when the limit was introduced, with their line counts. Checked by scripts/check-file-size.mjs: listed files must not grow; `pnpm check:file-size --update` only lowers counts and drops entries. Do not add new entries; split the file instead (docs/testing/ci-checks.md).",
+  "_comment": "Source files in crates/ over `limit` lines when the limit was introduced, with their line counts. Checked by scripts/check-file-size.mjs: listed files must not grow; `pnpm check:file-size --update` only lowers counts and drops entries. Do not add new entries; split the file instead.",
   "limit": 1500,
   "files": {
     "crates/agent-gui/src-tauri/src/commands/app/system.rs": 4564,

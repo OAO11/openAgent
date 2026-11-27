@@ -36,7 +36,7 @@
     "resources": {
       "../browser-extension": "browser-extension",
       "../../../LICENSE": "licenses/LiveAgent-MIT.txt",
-      "../../../docs/upstream/K-brain-LICENSE": "licenses/K-brain-Apache-2.0.txt",
+      "../../../resources/licenses/K-brain-LICENSE": "licenses/K-brain-Apache-2.0.txt",
       "../../../resources/prompts/LICENSE.agency-agents": "licenses/agency-agents-MIT.txt"
     },
     "icon": [

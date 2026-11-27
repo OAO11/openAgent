@@ -8,7 +8,9 @@ const files = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "ut
 const forbidden = [
   /(^|\/)(?:node_modules|target|dist|dist-ssr|data|coverage|test-results|playwright-report|__pycache__|\.codex|\.claude|\.codex-artifacts|\.pnpm-store|\.openagent-validation|\.codegraph|\.liveagent|\.openagent|\.vscode|\.idea)(?:\/|$)/,
   /^crates\/agent-gateway\//,
-  /^\.github\/pr-assets\//,
+  /^docs(?:\/|$)/,
+  /^README\.zh-CN\.md$/,
+  /^\.github\/(?!workflows\/)/,
   /^scripts\/(?:testing\/|prepare-gateway\.mjs$)/,
   /\.(?:exe|dll|pdb|msi|sqlite3?|db|log|pem|pfx|p12|key)$/i,
   /(^|\/)\.env(?:\.(?!example$).*)?$/,

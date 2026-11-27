@@ -35,10 +35,7 @@ try {
         $name = "openAgent-$Tag-Windows-x64-Setup.exe"
         Copy-Item -LiteralPath $installer -Destination (Join-Path $output $name)
         Copy-Item -LiteralPath ($installer+'.sig') -Destination (Join-Path $output ($name+'.sig'))
-        $notes = Join-Path $repo "docs/releases/$Tag.md"
-        $manifestArgs = @('scripts/release/create-tauri-updater-manifest.mjs', $output, (Join-Path $output 'latest.json'))
-        if (Test-Path -LiteralPath $notes) { $manifestArgs += $notes }
-        & node @manifestArgs
+        & node scripts/release/create-tauri-updater-manifest.mjs $output (Join-Path $output 'latest.json')
         if ($LASTEXITCODE -ne 0) { throw 'Updater manifest generation failed' }
         & node scripts/release/verify-updater-artifact.mjs (Join-Path $output $name) crates/agent-gui/src-tauri/updater-public-key.txt
         if ($LASTEXITCODE -ne 0) { throw 'Updater signature verification failed' }

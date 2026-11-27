@@ -1,5 +1,5 @@
 {
-  "_comment": "Baseline for scripts/check-perf-micro.mjs (node micro-benchmarks in crates/agent-gui/perf). Timings are normalized by calibrationMs; ratio and exact gates are listed in the script. Refresh only on purpose: `pnpm check:perf-micro --update` (docs/testing/ci-checks.md).",
+  "_comment": "Baseline for scripts/check-perf-micro.mjs (node micro-benchmarks in crates/agent-gui/perf). Timings are normalized by calibrationMs; ratio and exact gates are listed in the script. Refresh only on purpose: `pnpm check:perf-micro --update`.",
   "calibrationMs": 7.63,
   "metrics": {
     "sse.incremental2mbMs": 0.16,

@@ -7,7 +7,7 @@
 // fails only on findings that are not in the baseline, so new dead code is
 // caught without first cleaning up every old export. Baseline entries that no
 // longer show up are reported; `--update` rewrites the baseline from the
-// current findings (commit that deliberately, see docs/OPENAGENT_DEVELOPMENT.md).
+// current findings (commit that deliberately, see README.md).
 //
 // Usage:
 //   node scripts/check-knip.mjs [--update] [--report knip.json]
