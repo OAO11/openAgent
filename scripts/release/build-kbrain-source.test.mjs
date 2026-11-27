@@ -14,9 +14,13 @@ test("source build pins checkout and hashes both sidecars", async () => {
     const calls = [];
     const record = await buildSource({ output, sourceDir: output, run(command, args, options) {
       calls.push({ command, args, options });
+      if (command === "git" && args.includes("rev-parse")) return lock.sourceRevision;
       if (command === "go") writeFileSync(args[args.indexOf("-o") + 1], args.at(-1));
     } });
     assert.equal(calls[1].args.at(-1), lock.sourceRevision);
+    assert.equal(record.releaseTag, lock.releaseTag);
+    const flags = calls.find(call => call.command === "go").args;
+    assert.ok(flags[flags.indexOf("-ldflags") + 1].includes(`main.version=${lock.releaseTag}`));
     assert.deepEqual(record.patches, lock.patches);
     assert.equal(calls.filter(call => call.command === "git" && call.args.includes("apply")).length, (lock.patches?.length ?? 0) * 2);
     assert.equal(calls.find(call => call.command === "go").options.env.CGO_ENABLED, "0");
@@ -32,5 +36,17 @@ test("failed build removes stale artifact receipt", async () => {
     await writeFile(join(output, "kbrain-artifact.json"), "{}");
     await assert.rejects(buildSource({ output, run() { throw new Error("checkout failed"); } }), /checkout failed/);
     await assert.rejects(readFile(join(output, "kbrain-artifact.json")), { code: "ENOENT" });
+  } finally { await rm(output, { recursive: true, force: true }); }
+});
+
+test("a mismatched source tag cannot claim a stable version", async () => {
+  const output = await mkdtemp(join(tmpdir(), "kbrain-tag-mismatch-"));
+  try {
+    let built = false;
+    await assert.rejects(buildSource({ output, run(command, args) {
+      if (command === "git" && args.includes("rev-parse")) return "0".repeat(40);
+      if (command === "go") built = true;
+    } }), /release tag does not match/);
+    assert.equal(built, false);
   } finally { await rm(output, { recursive: true, force: true }); }
 });

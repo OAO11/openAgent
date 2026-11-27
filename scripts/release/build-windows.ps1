@@ -26,6 +26,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Version configuration failed' }
         & node scripts/release/prepare-kbrain.mjs --release
         if ($LASTEXITCODE -ne 0) { throw 'Locked K-brain preparation failed' }
+        & node scripts/release/smoke-kbrain.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'K-brain version or protocol smoke check failed' }
         & npx.cmd --yes pnpm@10.32.1 --filter liveagent tauri build --bundles nsis --config src-tauri/tauri.windows.release.conf.json --config src-tauri/tauri.version.generated.conf.json
         if ($LASTEXITCODE -ne 0) { throw 'Windows Setup build failed' }
         $installer = Join-Path $repo "target/release/bundle/nsis/openAgent_$($version.appVersion)_x64-setup.exe"

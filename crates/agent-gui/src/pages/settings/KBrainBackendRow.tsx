@@ -25,7 +25,7 @@ export function kbrainHealthDetails(
     .join(" · ");
 }
 
-/** Read-only K-brain identity for compatibility troubleshooting; the updater stays disabled. */
+/** Running backend identity. Validated backend upgrades ship through the signed app updater. */
 export function KBrainBackendRow({ loadHealth }: { loadHealth: () => Promise<KBrainHealth> }) {
   const { t } = useLocale();
   const [state, setState] = useState<HealthState>({ status: "loading" });

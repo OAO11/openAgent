@@ -1,9 +1,9 @@
 import { SubagentPane, SubagentRunningChip } from "@liveagent/ui/components/subagents/SubagentPane";
 import type { SubagentView } from "@liveagent/ui/contracts/subagentPane";
 import { useLocale } from "@liveagent/ui/i18n/index";
-import { createKBrainPromptClient } from "../../../lib/kbrain/prompts";
 import type { ChatFileLink } from "@liveagent/ui/lib/chat/chatFileLinks";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { createKBrainPromptClient } from "../../../lib/kbrain/prompts";
 import { subagentDirectory } from "../../../lib/subagents/kbrainPane";
 import {
   closeKBrainSubagentPane,
@@ -13,6 +13,7 @@ import {
   loadKBrainSubagents,
   loadKBrainSubagentTranscript,
   openKBrainSubagent,
+  releaseKBrainSubagentTranscripts,
   showKBrainSubagentDirectory,
   stopKBrainSubagent,
   subscribeKBrainSubagents,
@@ -44,6 +45,7 @@ export function KBrainSubagentPaneHost({
   useEffect(() => {
     setPages(1);
     void loadKBrainSubagents(conversationId);
+    return () => releaseKBrainSubagentTranscripts(conversationId);
   }, [conversationId]);
 
   const entries = state?.entries;
@@ -74,6 +76,11 @@ export function KBrainSubagentPaneHost({
   }, [entries, pages]);
   const activeEntry = pane?.active ? entries?.[pane.active] : undefined;
   const activeTranscript = activeEntry?.transcript;
+  useEffect(() => {
+    if (pane?.open && pane.active && !activeTranscript) {
+      void loadKBrainSubagentTranscript(conversationId, pane.active);
+    }
+  }, [conversationId, pane?.open, pane?.active, activeTranscript]);
   const live = activeEntry ? kbrainSubagentView(activeEntry).status === "running" : false;
   const transcript = useMemo(() => {
     if (!activeTranscript) return undefined;

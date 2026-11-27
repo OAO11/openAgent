@@ -22,9 +22,16 @@ jobs:
       - name: Validate desktop source
         run: |
           npx --yes pnpm@10.32.1 check:source-scope
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop validation failed' }
           npx --yes pnpm@10.32.1 typecheck:ui
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop validation failed' }
           npx --yes pnpm@10.32.1 typecheck:gui
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop validation failed' }
           npx --yes pnpm@10.32.1 check:ui-boundaries
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop validation failed' }
           node scripts/generate-builtin-skills.mjs --check
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop validation failed' }
       - name: Test release tooling
-        run: node --test scripts/release/release-version.test.mjs scripts/release/build-kbrain-source.test.mjs scripts/release/prepare-kbrain.test.mjs scripts/release/verify-kbrain-packaging.test.mjs
+        run: node --test scripts/release/release-version.test.mjs scripts/release/build-kbrain-source.test.mjs scripts/release/prepare-kbrain.test.mjs scripts/release/verify-kbrain-packaging.test.mjs scripts/release/sync-kbrain-upstream.test.mjs scripts/release/build-kbrain-source-adversarial.test.mjs
+      - name: Test subagent lifecycle and memory retention
+        run: node --test crates/agent-gui/test/providers/kbrain-subagents.test.mjs crates/agent-gui/test/chat/kbrain-subagent-control.test.mjs

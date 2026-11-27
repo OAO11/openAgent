@@ -22,6 +22,7 @@ test("source build injects the locked commit as main.revision, not as the releas
       output,
       sourceDir: output,
       run(command, args) {
+        if (command === "git" && args.includes("rev-parse")) return lock.sourceRevision;
         if (command !== "go") return;
         builds.push(args);
         writeFileSync(args[args.indexOf("-o") + 1], args.at(-1));

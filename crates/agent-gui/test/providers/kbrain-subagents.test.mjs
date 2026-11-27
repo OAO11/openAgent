@@ -557,3 +557,79 @@ test("role labels use backend-confirmed identity and survive partial status even
   assert.equal(legacy.roleId, undefined);
   assert.equal(legacy.roleName, undefined);
 });
+
+test("closed and evicted subagent tabs release transcript bodies but retain status and can reload", async () => {
+  const client = fakeClient({ transcript: (id) => ({ subagent: subagent({id,status:"done"}), last_seq:1, live:false, messages:[{role:"assistant",content:[{type:"text",text:id.repeat(1024)}]}] }) });
+  setup(client);
+  for (let i=0;i<12;i++) {
+    const id=`memory-${i}`;
+    store.ingestKBrainSubagentEvent("memory","backend-session-1",started(1,{id,status:"done",parent_tool_call_id:id}));
+    await store.loadKBrainSubagentTranscript("memory",id);
+    store.openKBrainSubagent("memory",id);
+  }
+  const state=()=>store.getKBrainConversationSubagents("memory");
+  assert.equal(Object.values(state().entries).filter(e=>e.transcript).length,pane.MAX_SUBAGENT_TABS);
+  assert.equal(state().entries["memory-0"].transcript,undefined);
+  store.closeKBrainSubagentTab("memory","memory-11");
+  assert.equal(state().entries["memory-11"].transcript,undefined);
+  store.closeKBrainSubagentPane("memory");
+  assert.equal(Object.values(state().entries).filter(e=>e.transcript).length,0);
+  assert.equal(state().order.length,12);
+  assert.equal(state().entries["memory-11"].subagent.status,"done");
+  await store.loadKBrainSubagentTranscript("memory","memory-11");
+  assert.equal(state().entries["memory-11"].transcript.status,"ready");
+  store.releaseKBrainSubagentTranscripts("memory");
+  assert.equal(state().entries["memory-11"].transcript,undefined);
+  store.resetKBrainSubagentStore();
+});
+
+test("a late transcript response cannot resurrect a closed tab or replace its reopened read", async () => {
+  const reads=[];
+  setup(fakeClient({transcript:()=>new Promise(resolve=>reads.push(resolve))}));
+  store.ingestKBrainSubagentEvent("race","backend-session-1",started(1,{status:"done"}));
+  const first=store.loadKBrainSubagentTranscript("race","task-1");
+  store.openKBrainSubagent("race","task-1");
+  store.closeKBrainSubagentPane("race");
+  const second=store.loadKBrainSubagentTranscript("race","task-1");
+  const response=text=>({subagent:subagent({status:"done"}),last_seq:1,live:false,messages:[{role:"assistant",content:[{type:"text",text}]}]});
+  reads[0](response("stale"));await first;
+  assert.equal(store.getKBrainConversationSubagents("race").entries["task-1"].transcript.status,"loading");
+  reads[1](response("current"));await second;
+  assert.equal(store.getKBrainConversationSubagents("race").entries["task-1"].transcript.messages[0].content[0].text,"current");
+  store.resetKBrainSubagentStore();
+});
+
+test("hidden child text advances sequence without rerendering; tools and completion still notify", () => {
+  setup(fakeClient());
+  store.noteKBrainSubagentTurnStarted("quiet");
+  store.ingestKBrainSubagentEvent("quiet","backend-session-1",started(1));
+  let renders=0;
+  const unsubscribe=store.subscribeKBrainSubagents(()=>renders++);
+  for(let seq=2;seq<=1001;seq++) store.ingestKBrainSubagentEvent("quiet","backend-session-1",child(seq,"text",{text:"x"}));
+  assert.equal(renders,0);
+  assert.equal(store.getKBrainConversationSubagents("quiet").entries["task-1"].lastSeq,1001);
+  store.ingestKBrainSubagentEvent("quiet","backend-session-1",child(1002,"tool_start",{id:"tool",name:"Read",arguments:"{}"}));
+  assert.equal(renders,1);
+  store.ingestKBrainSubagentEvent("quiet","backend-session-1",event(1003,"subagent.completed",{subagent:subagent({status:"done"})}));
+  assert.equal(renders,2);
+  unsubscribe();store.resetKBrainSubagentStore();
+});
+
+test("closing a loading pane aborts its HTTP read without stopping the subagent", async () => {
+  let signal, resolve;
+  const client=fakeClient();
+  client.getSubagentTranscript=(_session,_id,readSignal)=>{ signal=readSignal; return new Promise(done=>resolve=done); };
+  setup(client);
+  store.noteKBrainSubagentTurnStarted("abort");
+  store.ingestKBrainSubagentEvent("abort","backend-session-1",started(1));
+  const loading=store.loadKBrainSubagentTranscript("abort","task-1");
+  store.openKBrainSubagent("abort","task-1");
+  assert.equal(signal.aborted,false);
+  store.closeKBrainSubagentPane("abort");
+  assert.equal(signal.aborted,true);
+  resolve({subagent:subagent(),last_seq:1,live:false,messages:[]});await loading;
+  assert.equal(store.getKBrainConversationSubagents("abort").entries["task-1"].transcript,undefined);
+  assert.equal(store.countRunningKBrainSubagents(store.getKBrainConversationSubagents("abort")),1);
+  assert.equal(client.calls.cancel.length,0);
+  store.resetKBrainSubagentStore();
+});

@@ -9,7 +9,7 @@ import { root } from "./prepare-kbrain.mjs";
 
 const target = "aarch64-apple-darwin";
 const lock = join(root, "scripts/release/kbrain.lock.json");
-const { sourceRevision: revision } = JSON.parse(await readFile(lock, "utf8"));
+const { sourceRevision: revision, releaseTag, patches } = JSON.parse(await readFile(lock, "utf8"));
 
 function sha256(data) { return createHash("sha256").update(data).digest("hex"); }
 
@@ -60,7 +60,7 @@ test("prepared backend and computer helper receipts use the locked target and ch
     await executable(join(directory, backendName), backend);
     await executable(join(directory, computerName), computer);
     await writeFile(join(directory, `${backendName}.json`), JSON.stringify({
-      sourceRevision: revision,
+      sourceRevision: revision, releaseTag, patches,
       protocol: "kbrain.agent.v1",
       target,
       assets: { backend: "k-brain-darwin-arm64", computer: "k-brain-computer-darwin-arm64" },

@@ -17,6 +17,9 @@ export async function readLock(path = defaultLock) {
       !lock.requiredBackendFlags?.includes("-parent-stdio")) {
     throw new Error("Invalid K-brain lock: repository, full source revision and protocol are required");
   }
+  if (lock.releaseTag !== undefined && !/^v\d+\.\d+\.\d+$/.test(lock.releaseTag)) {
+    throw new Error("Invalid K-brain stable release tag");
+  }
   for (const patch of lock.patches ?? []) {
     if (!/^[a-z0-9][a-z0-9-]*\.patch$/.test(patch.file) || !/^[a-f0-9]{64}$/.test(patch.sha256)) {
       throw new Error("Invalid K-brain source patch lock");
@@ -170,7 +173,7 @@ export async function prepare(options = {}) {
     const artifactDirectory = options.artifactDir === false || useDownload ? null : resolve(explicitArtifact || defaultArtifact);
     let record = artifactDirectory ? await optionalJson(join(artifactDirectory, "kbrain-artifact.json")) : null;
     if (lock.patches?.length && !localBackend && !explicitArtifact && artifactDirectory &&
-        (!record || record.sourceRevision !== lock.sourceRevision || JSON.stringify(record.patches ?? []) !== JSON.stringify(lock.patches))) {
+        (!record || record.sourceRevision !== lock.sourceRevision || record.releaseTag !== lock.releaseTag || JSON.stringify(record.patches ?? []) !== JSON.stringify(lock.patches))) {
       const { buildSource } = await import("./build-kbrain-source.mjs");
       record = await buildSource({ lock: options.lock, target, output: artifactDirectory });
     }
@@ -184,7 +187,7 @@ export async function prepare(options = {}) {
       checksums = { backend: backendResult.sha256, computer: computerResult.sha256 };
       origin = "development-override";
     } else if (record) {
-      if (record.schemaVersion !== 1 || record.repository !== lock.repository || record.sourceRevision !== lock.sourceRevision || record.protocol !== lock.protocol || JSON.stringify(record.patches ?? []) !== JSON.stringify(lock.patches ?? [])) {
+      if (record.schemaVersion !== 1 || record.repository !== lock.repository || record.sourceRevision !== lock.sourceRevision || record.releaseTag !== lock.releaseTag || record.protocol !== lock.protocol || JSON.stringify(record.patches ?? []) !== JSON.stringify(lock.patches ?? [])) {
         throw new Error("K-brain artifact source revision/protocol does not match lock");
       }
       const entry = record.platforms?.[target];
@@ -213,7 +216,7 @@ export async function prepare(options = {}) {
       checksums = { backend: backendResult.sha256, computer: computerResult.sha256 };
       origin = "locked-download";
     }
-    const receipt = { sourceRevision: lock.sourceRevision, protocol: lock.protocol, target, assets: platform.assets, sha256: checksums, origin, ...(lock.patches?.length ? { patches: lock.patches } : {}) };
+    const receipt = { sourceRevision: lock.sourceRevision, protocol: lock.protocol, target, assets: platform.assets, sha256: checksums, origin, ...(lock.releaseTag ? { releaseTag: lock.releaseTag } : {}), ...(lock.patches?.length ? { patches: lock.patches } : {}) };
     await atomicWrite(`${backend}.json`, `${JSON.stringify(receipt, null, 2)}\n`);
     return { binary: backend, computerBinary: computer, ...receipt };
   } catch (error) {

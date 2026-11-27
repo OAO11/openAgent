@@ -77,6 +77,7 @@ type Resources = {
   follows: Map<string, AbortController>;
   /** Child events that arrived while the transcript was loading. */
   pending: Map<string, KBrainEvent[]>;
+  transcriptReads: Map<string, AbortController>;
   turnActive: boolean;
   listLoad?: Promise<void>;
   /** Polls subagents another process (kn) runs; they have no event stream here. */
@@ -116,6 +117,7 @@ export function configureKBrainSubagentStore(options: {
 export function resetKBrainSubagentStore() {
   for (const resource of resources.values()) {
     for (const controller of resource.follows.values()) controller.abort();
+    for (const controller of resource.transcriptReads.values()) controller.abort();
     if (resource.externalPoll) clearTimeout(resource.externalPoll);
   }
   conversations.clear();
@@ -145,7 +147,12 @@ function emit() {
 function resourcesFor(conversationId: string): Resources {
   let resource = resources.get(conversationId);
   if (!resource) {
-    resource = { follows: new Map(), pending: new Map(), turnActive: false };
+    resource = {
+      follows: new Map(),
+      pending: new Map(),
+      transcriptReads: new Map(),
+      turnActive: false,
+    };
     resources.set(conversationId, resource);
   }
   return resource;
@@ -180,12 +187,13 @@ function update(
   conversationId: string,
   change: (state: ConversationSubagents) => ConversationSubagents,
   sessionId?: string,
+  notify = true,
 ) {
   const previous = conversationFor(conversationId, sessionId);
   const next = change(previous);
   if (next === previous) return;
   conversations.set(conversationId, next);
-  emit();
+  if (notify) emit();
 }
 
 function withEntry(
@@ -240,6 +248,13 @@ export function ingestKBrainSubagentEvent(
   const id = subagentEventTaskId(event);
   if (!id) return;
   const resource = resourcesFor(conversationId);
+  const previous = conversations.get(conversationId)?.entries[id];
+  // Hidden text only advances the resume cursor. Do not rerender every card and
+  // directory for tokens whose transcript is not being displayed or retained.
+  const notify =
+    !event.type.startsWith(CHILD_EVENT_PREFIX) ||
+    !!childToolFromEvent(event) ||
+    previous?.transcript?.status === "ready";
   update(
     conversationId,
     (state) =>
@@ -260,6 +275,7 @@ export function ingestKBrainSubagentEvent(
         return applyEvent(entry, event);
       }),
     sessionId,
+    notify,
   );
   const entry = conversations.get(conversationId)?.entries[id];
   if (entry && isTerminalSubagentStatus(entry.subagent.status)) {
@@ -379,13 +395,20 @@ async function pollExternalSubagents(conversationId: string) {
 /** Re-reads a loaded transcript in place (no loading state), for polled subagents. */
 function refreshKBrainSubagentTranscript(conversationId: string, id: string): Promise<void> {
   const state = conversations.get(conversationId);
-  if (!state?.sessionId || !state.entries[id]) return Promise.resolve();
+  const transcript = state?.entries[id]?.transcript;
+  if (!state?.sessionId || !transcript) return Promise.resolve();
+  const resource = resourcesFor(conversationId);
+  if (resource.transcriptReads.has(id)) return Promise.resolve();
+  const controller = new AbortController();
+  resource.transcriptReads.set(id, controller);
   return clientFactory()
-    .getSubagentTranscript(state.sessionId, id)
+    .getSubagentTranscript(state.sessionId, id, controller.signal)
     .then((loaded: KBrainSubagentTranscript) => {
+      if (conversations.get(conversationId)?.entries[id]?.transcript !== transcript) return;
       update(conversationId, (current) =>
         withEntry(current, id, (value) => {
-          if (!value || value.transcript?.status !== "ready") return value;
+          if (!value || value.transcript !== transcript || value.transcript.status !== "ready")
+            return value;
           return {
             ...value,
             subagent: mergeBackendSubagent(value.subagent, loaded.subagent),
@@ -394,7 +417,10 @@ function refreshKBrainSubagentTranscript(conversationId: string, id: string): Pr
         }),
       );
     })
-    .catch(() => undefined);
+    .catch(() => undefined)
+    .finally(() => {
+      if (resource.transcriptReads.get(id) === controller) resource.transcriptReads.delete(id);
+    });
 }
 
 /**
@@ -477,15 +503,22 @@ export function loadKBrainSubagentTranscript(conversationId: string, id: string)
   if (!state?.sessionId || !entry) return Promise.resolve();
   if (entry.transcript && entry.transcript.status !== "error") return Promise.resolve();
   const resource = resourcesFor(conversationId);
-  resource.pending.set(id, []);
+  const pendingEvents: KBrainEvent[] = [];
+  const controller = new AbortController();
+  resource.transcriptReads.get(id)?.abort();
+  resource.transcriptReads.set(id, controller);
+  resource.pending.set(id, pendingEvents);
   update(conversationId, (current) =>
     withEntry(current, id, (value) =>
       value ? { ...value, transcript: { messages: [], status: "loading" } } : value,
     ),
   );
   return clientFactory()
-    .getSubagentTranscript(state.sessionId, id)
+    .getSubagentTranscript(state.sessionId, id, controller.signal)
     .then((loaded: KBrainSubagentTranscript) => {
+      // Closing, evicting, deleting or reopening a tab invalidates this read.
+      if (resources.get(conversationId) !== resource || resource.pending.get(id) !== pendingEvents)
+        return;
       const baseSeq = loaded.last_seq ?? 0;
       const pending = resource.pending.get(id) ?? [];
       resource.pending.delete(id);
@@ -516,6 +549,8 @@ export function loadKBrainSubagentTranscript(conversationId: string, id: string)
       }
     })
     .catch((error: unknown) => {
+      if (resources.get(conversationId) !== resource || resource.pending.get(id) !== pendingEvents)
+        return;
       resource.pending.delete(id);
       update(conversationId, (current) =>
         withEntry(current, id, (value) =>
@@ -531,6 +566,9 @@ export function loadKBrainSubagentTranscript(conversationId: string, id: string)
             : value,
         ),
       );
+    })
+    .finally(() => {
+      if (resource.transcriptReads.get(id) === controller) resource.transcriptReads.delete(id);
     });
 }
 
@@ -540,13 +578,38 @@ export function stopKBrainSubagent(conversationId: string, id: string): Promise<
   return clientFactory().cancelSubagent(state.sessionId, id);
 }
 
+/** Keep lightweight status and follow streams, release reloadable message bodies. */
+function retainPaneTranscripts(state: ConversationSubagents, pane: SubagentPaneState) {
+  const keep = new Set(pane.open ? pane.tabs : []);
+  let entries: Record<string, SubagentEntry> | undefined;
+  for (const [id, entry] of Object.entries(state.entries)) {
+    if (keep.has(id) || !entry.transcript) continue;
+    entries ??= { ...state.entries };
+    const { transcript: _released, ...rest } = entry;
+    entries[id] = rest;
+    const resource = resources.get(state.conversationId);
+    resource?.pending.delete(id);
+    resource?.transcriptReads.get(id)?.abort();
+    resource?.transcriptReads.delete(id);
+  }
+  return { ...state, entries: entries ?? state.entries, pane };
+}
+
+export function releaseKBrainSubagentTranscripts(conversationId: string) {
+  if (!conversations.has(conversationId)) return;
+  update(conversationId, (state) => ({
+    ...retainPaneTranscripts(state, { ...state.pane, open: false }),
+    pane: state.pane,
+  }));
+}
+
 export function openKBrainSubagent(conversationId: string, id: string) {
-  update(conversationId, (state) => ({ ...state, pane: openSubagentTab(state.pane, id) }));
+  update(conversationId, (state) => retainPaneTranscripts(state, openSubagentTab(state.pane, id)));
   void loadKBrainSubagentTranscript(conversationId, id);
 }
 
 export function closeKBrainSubagentTab(conversationId: string, id: string) {
-  update(conversationId, (state) => ({ ...state, pane: closeSubagentTab(state.pane, id) }));
+  update(conversationId, (state) => retainPaneTranscripts(state, closeSubagentTab(state.pane, id)));
 }
 
 export function showKBrainSubagentDirectory(conversationId: string) {
@@ -555,7 +618,7 @@ export function showKBrainSubagentDirectory(conversationId: string) {
 }
 
 export function closeKBrainSubagentPane(conversationId: string) {
-  update(conversationId, (state) => ({ ...state, pane: closeSubagentPane(state.pane) }));
+  update(conversationId, (state) => retainPaneTranscripts(state, closeSubagentPane(state.pane)));
 }
 
 export function getKBrainConversationSubagents(
@@ -614,6 +677,7 @@ export function forgetKBrainSubagents(conversationId: string) {
   const resource = resources.get(conversationId);
   for (const controller of resource?.follows.values() ?? []) controller.abort();
   if (resource?.externalPoll) clearTimeout(resource.externalPoll);
+  for (const controller of resource?.transcriptReads.values() ?? []) controller.abort();
   resources.delete(conversationId);
   for (const index of [toolCallIndex, controlCallIndex]) {
     for (const [toolCallId, link] of index) {

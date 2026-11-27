@@ -1,0 +1,155 @@
+name: Follow stable K-brain releases
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: openagent-kbrain-follow
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+      tag: ${{ steps.sync.outputs.tag }}
+      backend: ${{ steps.sync.outputs.backend }}
+      base: ${{ steps.base.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.19.0'
+      - id: base
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - id: sync
+        name: Check stable upstream and published backend
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/sync-kbrain-upstream.mjs
+      - uses: actions/upload-artifact@v7
+        if: steps.sync.outputs.changed == 'true'
+        with:
+          name: candidate-backend-lock
+          path: scripts/release/kbrain.lock.json
+  release:
+    needs: inspect
+    if: needs.inspect.outputs.changed == 'true'
+    runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ needs.inspect.outputs.tag }}
+      BACKEND_TAG: ${{ needs.inspect.outputs.backend }}
+      BASE_SHA: ${{ needs.inspect.outputs.base }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.inspect.outputs.base }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: candidate-backend-lock
+          path: candidate
+      - name: Prepare candidate or resume an unpublished tag
+        shell: pwsh
+        run: |
+          git show-ref --verify --quiet "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -eq 0) {
+            git checkout --detach $env:RELEASE_TAG
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot resume release tag' }
+            node -e "const fs=require('fs'),assert=require('assert/strict');assert.deepEqual(JSON.parse(fs.readFileSync('candidate/kbrain.lock.json')),JSON.parse(fs.readFileSync('scripts/release/kbrain.lock.json')))"
+            if ($LASTEXITCODE -ne 0) { throw 'Existing tag has different backend sources; refusing replacement' }
+          } else {
+            Copy-Item -LiteralPath candidate/kbrain.lock.json -Destination scripts/release/kbrain.lock.json
+          }
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.19.0'
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install protobuf compiler
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'protoc.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'protoc'
+          Invoke-WebRequest 'https://github.com/protocolbuffers/protobuf/releases/download/v34.0/protoc-34.0-win64.zip' -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          (Join-Path $destination 'bin') | Out-File -Append $env:GITHUB_PATH
+      - name: Install dependencies
+        run: npx --yes pnpm@10.32.1 install --frozen-lockfile --filter openagent-workspace --filter liveagent...
+      - name: Validate product and updater
+        shell: pwsh
+        run: |
+          node scripts/check-source-scope.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Source scope failed' }
+          node scripts/generate-builtin-skills.mjs --check
+          if ($LASTEXITCODE -ne 0) { throw 'Builtin skills check failed' }
+          npx --yes pnpm@10.32.1 typecheck:ui
+          if ($LASTEXITCODE -ne 0) { throw 'UI types failed' }
+          npx --yes pnpm@10.32.1 typecheck:gui
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop types failed' }
+          npx --yes pnpm@10.32.1 check:ui-boundaries
+          if ($LASTEXITCODE -ne 0) { throw 'UI boundaries failed' }
+          node --test scripts/release/build-kbrain-source.test.mjs scripts/release/prepare-kbrain.test.mjs scripts/release/sync-kbrain-upstream.test.mjs scripts/release/verify-kbrain-packaging.test.mjs crates/agent-gui/test/providers/kbrain-subagents.test.mjs crates/agent-gui/test/chat/kbrain-health-contract.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Regression tests failed' }
+      - name: Build and test patched backend
+        run: node scripts/release/build-kbrain-source.mjs --test
+      - name: Build signed Setup and verify runtime protocol
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: ./scripts/release/build-windows.ps1 -Tag $env:RELEASE_TAG
+      - uses: actions/upload-artifact@v7
+        with:
+          name: openAgent-Windows-x64
+          path: dist/releases/${{ needs.inspect.outputs.tag }}/*
+          if-no-files-found: error
+      - name: Publish verified source and signed update
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git show-ref --verify --quiet "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) {
+            git fetch origin main
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot check branch freshness' }
+            if ((git rev-parse origin/main).Trim() -ne $env:BASE_SHA) { throw 'Main changed while building; the next run will rebuild' }
+            git config user.name 'openAgent backend sync'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add scripts/release/kbrain.lock.json
+            git diff --cached --quiet
+            if ($LASTEXITCODE -ne 0) {
+              git commit -m "build: follow K-brain $env:BACKEND_TAG"
+              if ($LASTEXITCODE -ne 0) { throw 'Source commit failed' }
+            }
+            git tag $env:RELEASE_TAG
+            if ($LASTEXITCODE -ne 0) { throw 'Tag creation failed' }
+            git push --atomic origin HEAD:main "refs/tags/$env:RELEASE_TAG"
+            if ($LASTEXITCODE -ne 0) { throw 'Atomic source/tag push failed' }
+          }
+          $releaseText = gh release view $env:RELEASE_TAG --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if (!($releaseText | ConvertFrom-Json).isDraft) { throw 'Published releases are immutable' }
+          } else {
+            $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+            @("openAgent $env:RELEASE_TAG", '', "K-brain has been upgraded to $env:BACKEND_TAG. Product roles, local-only restrictions and data layout are preserved.", '', 'Validated: pinned source/tag, product patch tests, desktop types, runtime protocol, parent shutdown and updater signature. Install through Settings > About when ready to restart.') | Set-Content -LiteralPath $notes
+            gh release create $env:RELEASE_TAG --verify-tag --draft --title "openAgent $env:RELEASE_TAG" --notes-file $notes
+            if ($LASTEXITCODE -ne 0) { throw 'Draft creation failed' }
+          }
+          $assets = @(Get-ChildItem "dist/releases/$env:RELEASE_TAG" -File | Select-Object -ExpandProperty FullName)
+          gh release upload $env:RELEASE_TAG @assets --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Draft upload failed' }
+          $published = gh release view $env:RELEASE_TAG --json assets | ConvertFrom-Json
+          foreach ($path in $assets) {
+            $file = Get-Item -LiteralPath $path
+            $asset = @($published.assets | Where-Object name -eq $file.Name)
+            $digest = 'sha256:' + (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($asset.Count -ne 1 -or $asset[0].size -ne $file.Length -or $asset[0].digest -ne $digest) { throw 'Uploaded asset verification failed' }
+          }
+          gh release edit $env:RELEASE_TAG --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Publication failed; next schedule retries the unpublished tag' }

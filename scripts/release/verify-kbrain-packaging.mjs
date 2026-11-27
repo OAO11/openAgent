@@ -39,7 +39,7 @@ export async function verifyPreparedBinaries({ binaryDir, target, lock = default
   const backendName = `k-brain-${target}${platform.goos === "windows" ? ".exe" : ""}`;
   const computerName = `k-brain-computer-${target}${platform.goos === "windows" ? ".exe" : ""}`;
   const receipt = await readJson(join(directory, `${backendName}.json`));
-  if (receipt.sourceRevision !== manifest.sourceRevision || receipt.protocol !== manifest.protocol || receipt.target !== target || JSON.stringify(receipt.patches ?? []) !== JSON.stringify(manifest.patches ?? [])) {
+  if (receipt.sourceRevision !== manifest.sourceRevision || receipt.releaseTag !== manifest.releaseTag || receipt.protocol !== manifest.protocol || receipt.target !== target || JSON.stringify(receipt.patches ?? []) !== JSON.stringify(manifest.patches ?? [])) {
     throw new Error("Prepared K-brain receipt does not match the lock");
   }
   if (receipt.assets?.backend !== platform.assets.backend || receipt.assets?.computer !== platform.assets.computer) {

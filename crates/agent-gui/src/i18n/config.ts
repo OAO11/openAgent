@@ -111,7 +111,7 @@ export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> =
     "settings.aboutApplication": "应用",
     "settings.aboutApplicationDesc": "名称、版本与当前更新通道。",
     "settings.aboutKbrain": "K-brain 后端",
-    "settings.aboutKbrainDesc": "当前连接的后端版本、协议与能力修订，用于排查兼容问题。",
+    "settings.aboutKbrainDesc": "后端随 openAgent 在线更新一并升级，保留内置角色与本地功能。",
     "settings.aboutKbrainLegacy": "旧版后端（未提供结构化版本信息）",
     "settings.aboutKbrainProtocol": "协议",
     "settings.aboutKbrainCapabilityRevision": "能力修订",
@@ -511,7 +511,7 @@ export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> =
     "settings.aboutApplicationDesc": "Name, version, and current update channel.",
     "settings.aboutKbrain": "K-brain backend",
     "settings.aboutKbrainDesc":
-      "Version, protocol, and capability revision of the connected backend, for compatibility troubleshooting.",
+      "The backend upgrades with openAgent updates, preserving built-in roles and local features.",
     "settings.aboutKbrainLegacy": "Legacy backend (no structured version information)",
     "settings.aboutKbrainProtocol": "Protocol",
     "settings.aboutKbrainCapabilityRevision": "Capability revision",
