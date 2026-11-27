@@ -55,7 +55,7 @@ export function ProviderCredentialRow({ viewModel }: { viewModel: ProviderModalV
             id="modal-apikey"
             type={showApiKey ? "text" : "password"}
             value={apiKey}
-            className="h-10 pr-9 shadow-none"
+            className="h-10 pr-9 shadow-none [&::-ms-reveal]:hidden"
             onChange={(event) => setApiKey(event.currentTarget.value)}
             onFocus={(event) => {
               // The stored-key placeholder is selected whole, so typing replaces it.

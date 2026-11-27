@@ -35,6 +35,7 @@
     "targets": "all",
     "resources": {
       "../browser-extension": "browser-extension",
+      "icons/icon-windows.ico": "icons/openagent-logo.ico",
       "../../../LICENSE": "licenses/LiveAgent-MIT.txt",
       "../../../resources/licenses/K-brain-LICENSE": "licenses/K-brain-Apache-2.0.txt",
       "../../../resources/prompts/LICENSE.agency-agents": "licenses/agency-agents-MIT.txt"

@@ -5,6 +5,8 @@
 ; openAgent keeps its persistent data (config, chat history, memory, skills,
 ; uploads, checkpoints, ...) under <installation directory>\data, so clean it here.
 
+!include "${__FILEDIR__}\shortcut-icons.nsh"
+
 ; Keep Tauri's legacy AppData cleanup away from the independent debug preview.
 ; Installed builds own only $INSTDIR\data. Preserve the UI selection for our hook.
 Var OpenAgentDeleteAppData

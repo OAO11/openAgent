@@ -15,6 +15,7 @@ Copy-Item $parentExe $childExe
 # Exercise the original macro bodies, redirecting only the data root into a disposable directory.
 $hook = Get-Content (Join-Path $repo 'crates\agent-gui\src-tauri\windows\installer-hooks.nsh') -Raw
 $hook | Set-Content (Join-Path $scratch 'isolated-hooks.nsh')
+Copy-Item (Join-Path $repo 'crates\agent-gui\src-tauri\windows\shortcut-icons.nsh') (Join-Path $scratch 'shortcut-icons.nsh')
 $source = @'
 Unicode true
 !include "LogicLib.nsh"
