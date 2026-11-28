@@ -133,6 +133,7 @@ export type ChatHistorySidebarProps = {
   ) => void;
   /** Menu alternative to dragging: open a conversation in a split pane. */
   onConversationOpenInWorkbenchSplit?: (item: SidebarConversation) => void;
+  workbenchConversationStates?: ReadonlyMap<string, "focused" | "open">;
   /** Workbench drag intent from a project row title (creates a conversation). */
   onProjectWorkbenchDragIntent?: (
     project: WorkspaceProject,

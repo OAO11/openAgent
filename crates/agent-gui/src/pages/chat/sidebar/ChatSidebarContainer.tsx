@@ -64,6 +64,7 @@ type ChatSidebarContainerProps = ChatHistorySidebarContainerSource & {
     },
   ) => void;
   onConversationOpenInWorkbenchSplit?: (item: SidebarConversation) => void;
+  workbenchConversationStates?: ReadonlyMap<string, "focused" | "open">;
   onProjectWorkbenchDragIntent?: (
     project: WorkspaceProject,
     event: {
@@ -267,6 +268,7 @@ export function ChatSidebarContainer(props: ChatSidebarContainerProps) {
       })}
       onConversationWorkbenchDragIntent={props.onConversationWorkbenchDragIntent}
       onConversationOpenInWorkbenchSplit={props.onConversationOpenInWorkbenchSplit}
+      workbenchConversationStates={props.workbenchConversationStates}
       onProjectWorkbenchDragIntent={props.onProjectWorkbenchDragIntent}
       headerTop={<DesktopSidebarTitleBar />}
       brand={<DesktopSidebarBrand />}

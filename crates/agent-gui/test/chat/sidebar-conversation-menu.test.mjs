@@ -32,6 +32,8 @@ function mountRow(overrides = {}) {
     const [isRenaming, setRenaming] = React.useState(false);
     const [renameDraft, setRenameDraft] = React.useState("");
     calls.setDraft = setRenameDraft;
+    const [workbenchPaneState, setWorkbenchPaneState] = React.useState(overrides.workbenchPaneState);
+    calls.setWorkbenchPaneState = setWorkbenchPaneState;
     return React.createElement(HistoryRow, {
       item: { id: "one", title: "Conversation", cwd: "/repo/a", createdAt: 1, updatedAt: 1 },
       isActive: false, isBusy: false, isRunning: false, isDeleteDisabled: false,
@@ -52,6 +54,7 @@ function mountRow(overrides = {}) {
       onEnterSelectionMode() { setMenuOpen(false); setSelectionMode(true); },
       moveWorkspaces: [{ id: "a", name: "Alpha", path: "/repo/a" }, { id: "b", name: "Beta", path: "/repo/b" }],
       ...overrides,
+      workbenchPaneState,
     });
   }
   act(() => root.render(React.createElement(SidebarProvider, null, React.createElement(Harness))));
@@ -232,5 +235,58 @@ test("keyboard context menu, Escape cancellation, and Enter submission remain ac
       bubbles: true, cancelable: true,
     })));
     assert.deepEqual(row.calls.renamed, ["Updated"]);
+  } finally { await row.cleanup(); }
+});
+
+
+test("split menu opens a different conversation once without selecting it first", async () => {
+  const opened = [];
+  const row = mountRow({ onOpenInWorkbenchSplit: (item) => opened.push(item.id) });
+  try {
+    await openContext(row);
+    await click(menuItem("workbench.openInSplit"));
+    assert.deepEqual(opened, ["one"]);
+    assert.deepEqual(row.calls.selected, []);
+    assert.equal(document.querySelector('[role="menu"]'), null);
+  } finally { await row.cleanup(); }
+});
+
+test("the focused conversation does not offer a split action that silently does nothing", async () => {
+  const opened = [];
+  const row = mountRow({ workbenchPaneState: "focused", onOpenInWorkbenchSplit: (item) => opened.push(item.id) });
+  try {
+    await openContext(row);
+    assert.ok(!menuItem("workbench.openInSplit"), "an open conversation must not offer another split");
+    const current = menuItem("workbench.conversationInCurrentPane");
+    assert.ok(current);
+    assert.equal(current.getAttribute("aria-disabled"), "true");
+    await click(current);
+    assert.deepEqual(opened, []);
+  } finally { await row.cleanup(); }
+});
+
+test("a conversation in another pane offers focus instead of creating a duplicate", async () => {
+  const focused = [];
+  const row = mountRow({ workbenchPaneState: "open", onOpenInWorkbenchSplit: (item) => focused.push(item.id) });
+  try {
+    await openContext(row);
+    assert.ok(!menuItem("workbench.openInSplit"), "an open conversation must not offer another split");
+    await click(menuItem("workbench.focusConversationPane"));
+    assert.deepEqual(focused, ["one"]);
+    assert.deepEqual(row.calls.selected, []);
+  } finally { await row.cleanup(); }
+});
+
+test("memoized conversation rows refresh the menu when panes open, focus and close", async () => {
+  const row = mountRow({ onOpenInWorkbenchSplit() {} });
+  try {
+    await openContext(row);
+    assert.ok(menuItem("workbench.openInSplit"));
+    await act(async () => row.calls.setWorkbenchPaneState("open"));
+    assert.ok(menuItem("workbench.focusConversationPane"));
+    await act(async () => row.calls.setWorkbenchPaneState("focused"));
+    assert.equal(menuItem("workbench.conversationInCurrentPane").getAttribute("aria-disabled"), "true");
+    await act(async () => row.calls.setWorkbenchPaneState(undefined));
+    assert.ok(menuItem("workbench.openInSplit"));
   } finally { await row.cleanup(); }
 });

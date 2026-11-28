@@ -1421,6 +1421,8 @@ export const ZH_CN_COMMON_TRANSLATIONS = {
   "workbench.showConversation": "切换到对话视图",
   "workbench.loadConversation": "加载会话",
   "workbench.openInSplit": "在分屏中打开",
+  "workbench.conversationInCurrentPane": "已在当前窗格中打开",
+  "workbench.focusConversationPane": "转到所在窗格",
   "workbench.openNewTerminalInSplit": "在分屏中新建终端",
   "workbench.noSpaceForSplit": "空间不足，无法再打开新面板",
   "workbench.dropStateChanged": "分屏布局已变化，请重新拖放",

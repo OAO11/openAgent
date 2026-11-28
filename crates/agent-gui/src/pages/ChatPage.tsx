@@ -2683,6 +2683,19 @@ function ChatPageContent(props: ChatPageProps) {
     onCommandError: handleWorkbenchCommandError,
   });
 
+  const workbenchConversationStates = useMemo(() => {
+    const states = new Map<string, "focused" | "open">();
+    for (const pane of Object.values(workbench.layout.panes)) {
+      if (pane.surface.kind === "conversation") {
+        states.set(
+          pane.surface.conversationId,
+          pane.paneId === workbench.layout.focusedPaneId ? "focused" : "open",
+        );
+      }
+    }
+    return states;
+  }, [workbench.layout.panes, workbench.layout.focusedPaneId]);
+
   // A pane focus/drop selects its conversation asynchronously; until the
   // selection lands, syncCurrentConversation must not rebind the focused pane
   // back to the outgoing conversation.
@@ -3212,6 +3225,7 @@ function ChatPageContent(props: ChatPageProps) {
       const existingPaneId = workbench.paneIdForConversation(item.id);
       if (existingPaneId) {
         handleWorkbenchFocusPane(existingPaneId);
+        addNotify("success", t("workbench.conversationAlreadyOpen"));
         return;
       }
       const target = resolveWorkbenchAutoDockTarget();
@@ -4685,6 +4699,9 @@ function ChatPageContent(props: ChatPageProps) {
           }
           onConversationOpenInWorkbenchSplit={
             sessionWorkbench.enabled ? handleOpenConversationInSplit : undefined
+          }
+          workbenchConversationStates={
+            sessionWorkbench.enabled ? workbenchConversationStates : undefined
           }
           onProjectWorkbenchDragIntent={
             sessionWorkbench.enabled ? handleProjectWorkbenchDragIntent : undefined

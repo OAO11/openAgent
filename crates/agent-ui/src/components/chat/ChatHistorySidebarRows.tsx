@@ -174,6 +174,7 @@ type HistoryRowProps = {
   ) => void;
   /** Menu alternative to dragging: open the conversation in a split pane. */
   onOpenInWorkbenchSplit?: (item: SidebarConversation) => void;
+  workbenchPaneState?: "focused" | "open";
 };
 
 function areRenderedHistoryItemsEqual(previous: SidebarConversation, next: SidebarConversation) {
@@ -232,7 +233,8 @@ function areHistoryRowPropsEqual(previous: HistoryRowProps, next: HistoryRowProp
     previous.onEnterSelectionMode === next.onEnterSelectionMode &&
     previous.onMenuOpenChange === next.onMenuOpenChange &&
     previous.onWorkbenchDragIntent === next.onWorkbenchDragIntent &&
-    previous.onOpenInWorkbenchSplit === next.onOpenInWorkbenchSplit
+    previous.onOpenInWorkbenchSplit === next.onOpenInWorkbenchSplit &&
+    previous.workbenchPaneState === next.workbenchPaneState
   );
 }
 
@@ -745,12 +747,18 @@ export const HistoryRow = memo(function HistoryRow(props: HistoryRowProps) {
       ) : null}
       {onOpenInWorkbenchSplit && !item.isPending ? (
         <DropdownMenuItem
-          disabled={isInteractionDisabled}
+          disabled={isInteractionDisabled || props.workbenchPaneState === "focused"}
           onSelect={() => onOpenInWorkbenchSplit(item)}
           className={CONVERSATION_MENU_ITEM_CLASS}
         >
           <Columns2 className={CONVERSATION_MENU_ICON_CLASS} />
-          {t("workbench.openInSplit")}
+          {t(
+            props.workbenchPaneState === "focused"
+              ? "workbench.conversationInCurrentPane"
+              : props.workbenchPaneState === "open"
+                ? "workbench.focusConversationPane"
+                : "workbench.openInSplit",
+          )}
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuItem

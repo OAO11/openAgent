@@ -1483,6 +1483,8 @@ export const EN_US_COMMON_TRANSLATIONS = {
   "workbench.showConversation": "Switch to conversation view",
   "workbench.loadConversation": "Load conversation",
   "workbench.openInSplit": "Open in split pane",
+  "workbench.conversationInCurrentPane": "Already open in the current pane",
+  "workbench.focusConversationPane": "Go to conversation pane",
   "workbench.openNewTerminalInSplit": "New terminal in split pane",
   "workbench.noSpaceForSplit": "Not enough space for another pane",
   "workbench.dropStateChanged": "The pane layout changed. Drag the item again",
