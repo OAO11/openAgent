@@ -11,7 +11,7 @@ const model = { id: "shared", contextWindow: 200000, maxOutputToken: 8192, limit
 const provider = { id: "a", name: "A", type: "claude_code", baseUrl: "https://fixture.invalid", apiKey: "", apiKeyConfigured: true, models: [model], activeModels: [model.id] };
 
 test("disabled providers keep configuration, leave model choices and reject stale conversation selections", () => {
- const initial = settings.normalizeSettings({ customProviders: [provider], selectedModel: { customProviderId: "a", model: "shared" } });
+ const initial = settings.normalizeSettings({ locale: "zh-CN", customProviders: [provider], selectedModel: { customProviderId: "a", model: "shared" } });
  assert.equal(initial.customProviders[0].enabled, true);
  assert.equal(buildModelOptions(initial).length, 1);
  const disabled = settings.normalizeSettings({ ...initial, customProviders: [{ ...initial.customProviders[0], enabled: false }] });

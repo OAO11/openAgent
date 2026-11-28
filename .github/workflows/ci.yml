@@ -37,3 +37,5 @@ jobs:
         run: node --test crates/agent-gui/test/providers/kbrain-subagents.test.mjs crates/agent-gui/test/chat/kbrain-subagent-control.test.mjs
       - name: Test provider controls and model parameters
         run: node --test crates/agent-gui/test/settings/provider-controls.test.mjs crates/agent-gui/test/settings/provider-controls-modal.test.mjs crates/agent-gui/test/settings/provider-model-draft.test.mjs crates/agent-gui/test/providers/kbrain-provider-settings.test.mjs crates/agent-gui/test/chat/model-selection.test.mjs
+      - name: Test audited UI regressions
+        run: node --test --test-concurrency=2 crates/agent-gui/test/settings/disabled-provider-resources.test.mjs crates/agent-gui/test/ui/touch-targets.test.mjs crates/agent-gui/test/i18n/no-cjk-ui-literals.test.mjs

@@ -25,6 +25,7 @@ function provider(overrides = {}) {
 
 function appSettings(customProviders, selectedModel) {
   return settings.normalizeSettings({
+    locale: "zh-CN",
     customProviders,
     selectedModel,
   });
