@@ -191,7 +191,8 @@ export function isAnthropicOAuthApiKey(apiKey: string | undefined): boolean {
 // get_codex_user_agent()、grok xai-grok-sampler/src/client.rs。版本号取自上面三个
 // *_CLI_VERSION 常量，保证 UA 与随附的 version / client-version 头同源。os/arch/终端
 // 段按当前运行机平台生成；静态预览值仅用于下拉菜单展示。
-// 这些值只在用户点按钮时写进自定义请求头，发请求那侧不含任何内置伪装。
+// 这些值只在用户点按钮时写进自定义请求头。Codex Responses 的请求装配侧
+// 检测到这套显式身份头后补充每次请求的会话标识，并启用协议兼容。
 export const CLI_IDENTITY_USER_AGENTS = {
   claude_code: `claude-cli/${CLAUDE_CLI_VERSION} (external, cli)`,
   codex: `codex_cli_rs/${CODEX_CLI_VERSION} (Ubuntu 24.4.0; x86_64) WindowsTerminal`,

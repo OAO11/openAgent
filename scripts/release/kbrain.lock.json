@@ -115,6 +115,14 @@
     {
       "file": "openagent-provider-controls.patch",
       "sha256": "9478323abc55761488d60f9a853e6c8520358814fe32c385a73f903efc875059"
+    },
+    {
+      "file": "openagent-provider-routing.patch",
+      "sha256": "5478a983d0976afd28a4ca2a7b3e3adbe7c397ef3b7f10dfdbbe774ec5fb575b"
+    },
+    {
+      "file": "openagent-codex-compatibility.patch",
+      "sha256": "7dde23f096b187a828bda04ea732328225befc52cf97e30b1c80f39f4f98e16e"
     }
   ]
 }

@@ -8,10 +8,20 @@ import {
   recordWebSearchFallbackState,
   webSearchFallbackStateFrom,
 } from "@liveagent/ui/lib/providers/webSearchFallback";
-import { type AppSettings, type CustomProvider, normalizeCustomProvider } from "../settings";
+import {
+  type AppSettings,
+  type CustomProvider,
+  normalizeCustomProvider,
+  normalizeProviderFailoverSettings,
+} from "../settings";
 import { createKBrainClient } from "./client";
 import { getKBrainRuntimeConnection } from "./runtimeConnection";
-import type { KBrainSettingsDocument, KBrainSettingsProvider, KBrainSettingsUpdate } from "./types";
+import type {
+  KBrainProviderRetryPolicy,
+  KBrainSettingsDocument,
+  KBrainSettingsProvider,
+  KBrainSettingsUpdate,
+} from "./types";
 
 export const KBRAIN_SETTINGS_CHANGED_EVENT = "kbrain:settings-changed";
 
@@ -89,10 +99,26 @@ function withImageAdapter(model: ProviderModel): ProviderModel {
   return { ...model, imageAdapter: "" };
 }
 
+function backendRetryPolicy(
+  provider: CustomProvider,
+  settings: Pick<AppSettings, "customProviders" | "modelFailover">,
+): KBrainProviderRetryPolicy {
+  const failover = normalizeProviderFailoverSettings(
+    settings.modelFailover?.[provider.type],
+    settings.customProviders,
+    provider.type,
+  );
+  return {
+    ...(provider.retryPolicy ?? { mode: "default" as const }),
+    failover: { ...failover, maxSwitches: failover.enabled ? failover.maxSwitches : 0 },
+  };
+}
+
 function settingsUpdateFromProviders(
   previousProviders: readonly CustomProvider[],
   providersInput: readonly CustomProvider[],
   selectedModel?: AppSettings["selectedModel"],
+  modelFailover?: AppSettings["modelFailover"],
 ): KBrainSettingsUpdate {
   const previousById = new Map(previousProviders.map((provider) => [provider.id, provider]));
   const withInputModalities = resolvePushedInputModalities(providersInput);
@@ -114,6 +140,14 @@ function settingsUpdateFromProviders(
         ? { models: provider.models.map((model) => withImageAdapter(withInputModalities(model))) }
         : {}),
       api: resolveProviderApi(provider.type, provider.requestFormat),
+      ...(modelFailover
+        ? {
+            retryPolicy: backendRetryPolicy(provider, {
+              customProviders: [...providersInput],
+              modelFailover,
+            }),
+          }
+        : {}),
       ...(clearApiKey ? { clearApiKey: true } : apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
     };
   });
@@ -136,7 +170,38 @@ export function kBrainSettingsUpdateFromAppSettings(
     previous.customProviders,
     next.customProviders,
     next.selectedModel,
+    next.modelFailover,
   );
+}
+
+/** Apply the saved UI queue after an upgrade; absent backend policy is safely disabled. */
+export function kBrainSettingsUpdateForFailover(
+  document: KBrainSettingsDocument,
+  settings: AppSettings,
+): KBrainSettingsUpdate | undefined {
+  const backendById = new Map(document.providers.map((provider) => [provider.id, provider]));
+  const changed = settings.customProviders.filter((provider) => {
+    const actual = backendById.get(provider.id)?.retryPolicy?.failover;
+    const expected = backendRetryPolicy(provider, settings).failover;
+    if (!actual && !expected?.enabled) return false;
+    return (
+      !actual ||
+      !expected ||
+      actual.enabled !== expected.enabled ||
+      actual.maxSwitches !== expected.maxSwitches ||
+      actual.failureThreshold !== expected.failureThreshold ||
+      actual.cooldownSeconds !== expected.cooldownSeconds ||
+      JSON.stringify(actual.queue) !== JSON.stringify(expected.queue)
+    );
+  });
+  if (changed.length === 0) return undefined;
+  const update = kBrainSettingsUpdateFromAppSettings(settings, settings);
+  const ids = new Set(changed.map((provider) => provider.id));
+  update.providers = update.providers.filter((provider) => ids.has(provider.id));
+  delete update.defaultModel;
+  delete update.defaultProvider;
+  delete update.deleteProviders;
+  return update;
 }
 
 /** Build a one-time import request without exposing legacy provider secrets to storage. */
@@ -165,6 +230,7 @@ export function kBrainSettingsUpdateForMissingInputModalities(
   if (!needsBackfill) return undefined;
   const update = settingsUpdateFromProviders(providers, providers, selectedModel);
   delete update.deleteProviders;
+  for (const provider of update.providers) delete provider.retryPolicy;
   return update;
 }
 
@@ -199,6 +265,7 @@ export function kBrainSettingsUpdateForCatalogRefresh(
     return kBrainSettingsUpdateForMissingInputModalities(providers, selectedModel);
   const update = settingsUpdateFromProviders(providers, providers, selectedModel);
   delete update.deleteProviders;
+  for (const provider of update.providers) delete provider.retryPolicy;
   return update;
 }
 

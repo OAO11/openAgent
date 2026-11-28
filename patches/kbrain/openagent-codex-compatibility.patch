@@ -1,0 +1,324 @@
+diff --git a/internal/ai/openagent_codex.go b/internal/ai/openagent_codex.go
+new file mode 100644
+index 0000000..3370156
+--- /dev/null
++++ b/internal/ai/openagent_codex.go
+@@ -0,0 +1,86 @@
++package ai
++
++import (
++	"context"
++	"crypto/rand"
++	"crypto/sha256"
++	"fmt"
++	"net/http"
++	"strings"
++	"sync"
++)
++
++// Opt in through the existing "Simulate CLI -> Codex" provider headers.
++// Never infer this from a model name, provider type, or endpoint hostname.
++func (c *Responses) codexCompatibility() bool {
++	return strings.HasPrefix(c.Headers.Get("User-Agent"), "codex_cli_rs/") &&
++		c.Headers.Get("Originator") == "codex_cli_rs"
++}
++
++// One backend process serves one openAgent desktop window. Generate an actual
++// runtime ID, not a copied official client's device or installation identity.
++var codexWindowID = sync.OnceValue(func() string { return newCodexRuntimeID() })
++
++func newCodexRuntimeID() string {
++	var id [16]byte
++	if _, err := rand.Read(id[:]); err != nil {
++		panic(err)
++	}
++	id[6] = (id[6] & 0x0f) | 0x40
++	id[8] = (id[8] & 0x3f) | 0x80
++	return formatCodexRuntimeID(id[:])
++}
++
++func formatCodexRuntimeID(id []byte) string {
++	return fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:16])
++}
++
++func (c *Responses) codexHeaders(ctx context.Context) http.Header {
++	headers := c.Headers.Clone()
++	scope, _ := ctx.Value(cacheRequestKey{}).(string)
++	threadID := ""
++	if scope != "" {
++		// Hash the local session scope so workspace paths and user labels never
++		// leave the application. Stable across turns, distinct across endpoints.
++		id := sha256.Sum256([]byte("openAgent/codex-thread/v1\x00" + c.Endpoint() + "\x00" + scope))
++		id[6] = (id[6] & 0x0f) | 0x80
++		id[8] = (id[8] & 0x3f) | 0x80
++		threadID = formatCodexRuntimeID(id[:16])
++	} else {
++		threadID = newCodexRuntimeID()
++	}
++	setDefault := func(name, value string) {
++		if !hasHeader(headers, name) {
++			headers.Set(name, value)
++		}
++	}
++	setDefault("Thread-Id", threadID)
++	setDefault("Session-Id", headers.Get("Thread-Id"))
++	setDefault("X-Client-Request-Id", headers.Get("Thread-Id"))
++	setDefault("X-Codex-Window-Id", codexWindowID())
++	return headers
++}
++
++func codexResponsesPayload(payload map[string]any, req Request, headers http.Header) error {
++	// Only lift the leading system prefix. Developer messages and later system
++	// messages retain their role and position, including tool/reasoning history.
++	prefix := 0
++	instructions := []string{}
++	for prefix < len(req.Messages) && req.Messages[prefix].Role == "system" {
++		instructions = append(instructions, req.Messages[prefix].TextContent())
++		prefix++
++	}
++	input, err := responsesInput(req.Messages[prefix:])
++	if err != nil {
++		return err
++	}
++	payload["instructions"] = strings.Join(instructions, "\n\n")
++	payload["input"] = input
++	payload["tool_choice"] = "auto"
++	payload["parallel_tool_calls"] = true
++	if _, ok := payload["tools"]; !ok {
++		payload["tools"] = []any{}
++	}
++	payload["client_metadata"] = map[string]string{"x-codex-window-id": headers.Get("X-Codex-Window-Id")}
++	return nil
++}
+diff --git a/internal/ai/openagent_codex_test.go b/internal/ai/openagent_codex_test.go
+new file mode 100644
+index 0000000..9eeabaf
+--- /dev/null
++++ b/internal/ai/openagent_codex_test.go
+@@ -0,0 +1,189 @@
++package ai
++
++import (
++	"context"
++	"encoding/json"
++	"fmt"
++	"net/http"
++	"net/http/httptest"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func codexFixtureHeaders() map[string]string {
++	return map[string]string{"User-Agent": "codex_cli_rs/0.151.0 (Windows; x86_64)", "originator": "codex_cli_rs", "version": "0.151.0"}
++}
++
++type codexCaptured struct {
++	headers http.Header
++	body    map[string]any
++}
++
++func codexFixture(t *testing.T, headers map[string]string) (*Responses, *[]codexCaptured) {
++	t.Helper()
++	calls := []codexCaptured{}
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		var body map[string]any
++		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
++			t.Error(err)
++			w.WriteHeader(400)
++			return
++		}
++		calls = append(calls, codexCaptured{r.Header.Clone(), body})
++		if body["stream"] == true {
++			w.Header().Set("Content-Type", "text/event-stream")
++			fmt.Fprint(w, "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\",\"output\":[],\"usage\":{\"input_tokens\":3,\"output_tokens\":1}}}\n\n")
++		} else {
++			w.Header().Set("Content-Type", "application/json")
++			fmt.Fprint(w, `{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":3,"output_tokens":1}}`)
++		}
++	}))
++	t.Cleanup(server.Close)
++	client := &Responses{OpenAI: NewWithOptions(server.URL, "fixture-only", false, "", headers)}
++	return client, &calls
++}
++
++func TestOpenAgentCodexCompatibility(t *testing.T) {
++	c, calls := codexFixture(t, codexFixtureHeaders())
++	c.SetCacheKey("conversation-A")
++	c.SetCacheOptions(CacheOptions{Retention: "none"})
++	req := Request{Model: "fixture", MaxTokens: 128, Messages: []Message{
++		{Role: "system", Content: "Keep the original openAgent rules."},
++		{Role: "system", Parts: []ContentPart{{Type: "text", Text: "And the user selected role."}}},
++		{Role: "developer", Content: "Keep this developer instruction in input."},
++		{Role: "user", Content: "Hello"},
++	}}
++	original, _ := json.Marshal(req)
++	for i := 0; i < 2; i++ {
++		msg, usage, err := c.Stream(context.Background(), req, nil, nil, nil)
++		if err != nil || msg.Content != "ok" || usage.PromptTokens != 3 {
++			t.Fatalf("stream: %q, %+v, %v", msg.Content, usage, err)
++		}
++	}
++	c.SetCacheKey("conversation-B")
++	if _, _, err := c.Stream(context.Background(), req, nil, nil, nil); err != nil {
++		t.Fatal(err)
++	}
++	for _, call := range *calls {
++		for _, name := range []string{"Session-Id", "Thread-Id", "X-Client-Request-Id", "X-Codex-Window-Id"} {
++			if len(call.headers.Get(name)) != 36 {
++				t.Errorf("missing UUID %s", name)
++			}
++		}
++		if call.headers.Get("X-Client-Request-Id") != call.headers.Get("Thread-Id") {
++			t.Error("request/thread identity mismatch")
++		}
++		if call.headers.Get("Authorization") != "Bearer fixture-only" {
++			t.Error("credential changed")
++		}
++		if call.body["instructions"] != "Keep the original openAgent rules.\n\nAnd the user selected role." {
++			t.Errorf("instructions lost: %v", call.body["instructions"])
++		}
++		input := call.body["input"].([]any)
++		if len(input) != 2 || input[0].(map[string]any)["role"] != "developer" {
++			t.Error("history changed or system rules duplicated")
++		}
++		if call.body["max_output_tokens"] != float64(128) || call.body["store"] != false {
++			t.Error("request limits changed")
++		}
++		if _, ok := call.body["prompt_cache_key"]; ok {
++			t.Error("cache disabled was ignored")
++		}
++		metadata, ok := call.body["client_metadata"].(map[string]any)
++		if !ok || metadata["x-codex-window-id"] != call.headers.Get("X-Codex-Window-Id") {
++			t.Error("window metadata mismatch")
++		}
++	}
++	if (*calls)[0].headers.Get("Thread-Id") != (*calls)[1].headers.Get("Thread-Id") {
++		t.Error("thread changed within conversation")
++	}
++	if (*calls)[1].headers.Get("Thread-Id") == (*calls)[2].headers.Get("Thread-Id") {
++		t.Error("conversation identities shared")
++	}
++	if (*calls)[0].headers.Get("X-Codex-Window-Id") != (*calls)[2].headers.Get("X-Codex-Window-Id") {
++		t.Error("window changed between turns")
++	}
++	after, _ := json.Marshal(req)
++	if string(original) != string(after) {
++		t.Error("caller history mutated")
++	}
++	if c.Headers.Get("Thread-Id") != "" {
++		t.Error("dynamic headers leaked into provider settings")
++	}
++}
++
++func TestOpenAgentCodexCompleteUsesStream(t *testing.T) {
++	c, calls := codexFixture(t, codexFixtureHeaders())
++	text, usage, err := c.Complete(context.Background(), Request{Model: "fixture", Messages: []Message{{Role: "user", Content: "Hello"}}})
++	if err != nil || text != "ok" || usage.CompletionTokens != 1 {
++		t.Fatalf("complete: %q %+v %v", text, usage, err)
++	}
++	if (*calls)[0].body["stream"] != true || (*calls)[0].headers.Get("Accept") != "text/event-stream" {
++		t.Error("Codex mode must use SSE upstream")
++	}
++	if (*calls)[0].body["instructions"] != "" {
++		t.Error("unexpected invented instructions")
++	}
++}
++
++func TestOpenAgentCodexRequiresExplicitIdentity(t *testing.T) {
++	for _, headers := range []map[string]string{nil, {"User-Agent": "codex_cli_rs/0.151.0"}, {"originator": "codex_cli_rs"}, {"User-Agent": "codex_cli_rs/0.151.0", "originator": "other"}} {
++		c, calls := codexFixture(t, headers)
++		_, _, err := c.Complete(context.Background(), Request{Model: "fixture", Messages: []Message{{Role: "system", Content: "Original"}, {Role: "user", Content: "Hello"}}})
++		if err != nil {
++			t.Fatal(err)
++		}
++		call := (*calls)[0]
++		if call.body["stream"] != false {
++			t.Error("ordinary Responses must keep non-streaming completion")
++		}
++		for _, name := range []string{"Session-Id", "Thread-Id", "X-Codex-Window-Id"} {
++			if call.headers.Get(name) != "" {
++				t.Errorf("identity added without opt-in: %s", name)
++			}
++		}
++		if _, ok := call.body["instructions"]; ok {
++			t.Error("ordinary prompt layout changed")
++		}
++		if len(call.body["input"].([]any)) != 2 {
++			t.Error("ordinary system message lost")
++		}
++	}
++}
++
++func TestOpenAgentCodexPreservesExplicitHeadersAndHistory(t *testing.T) {
++	h := codexFixtureHeaders()
++	h["session-id"] = "manual-session"
++	h["thread-id"] = "manual-thread"
++	h["x-client-request-id"] = "manual-request"
++	h["x-codex-window-id"] = "manual-window"
++	c, calls := codexFixture(t, h)
++	req := Request{Model: "fixture", Messages: []Message{{Role: "system", Content: "Rules"}, {Role: "user", Content: "Hello"}, {Role: "system", Content: "Later rule must stay in place"}, {Role: "assistant", ToolCalls: []ToolCall{{ID: "call-1", Type: "function", Function: struct {
++		Name      string `json:"name"`
++		Arguments string `json:"arguments"`
++	}{Name: "fixture_tool", Arguments: "{}"}}}}, {Role: "tool", ToolCallID: "call-1", Content: "result"}}, Tools: []Tool{NewTool("fixture_tool", "fixture", `{"type":"object"}`)}}
++	_, _, err := c.Stream(context.Background(), req, nil, nil, nil)
++	if err != nil {
++		t.Fatal(err)
++	}
++	call := (*calls)[0]
++	for name, value := range h {
++		if call.headers.Get(name) != value {
++			t.Errorf("custom header overwritten: %s", name)
++		}
++	}
++	input := call.body["input"].([]any)
++	if len(input) != 4 || input[1].(map[string]any)["role"] != "system" {
++		t.Error("late system instruction moved")
++	}
++	if input[2].(map[string]any)["call_id"] != "call-1" || input[3].(map[string]any)["call_id"] != "call-1" {
++		t.Error("tool history lost")
++	}
++	if !reflect.DeepEqual(call.body["tool_choice"], "auto") || call.body["parallel_tool_calls"] != true {
++		t.Error("tool policy missing")
++	}
++	if !strings.Contains(fmt.Sprint(call.body["tools"]), "fixture_tool") {
++		t.Error("tool definitions lost")
++	}
++}
+diff --git a/internal/ai/responses.go b/internal/ai/responses.go
+index 887eb9e..3fc0141 100644
+--- a/internal/ai/responses.go
++++ b/internal/ai/responses.go
+@@ -16,6 +16,12 @@ func NewResponses(baseURL, apiKey string) *Responses {
+ func (c *Responses) Clone() Client { cp := *c.OpenAI; return &Responses{OpenAI: &cp} }
+ 
+ func (c *Responses) Complete(ctx context.Context, req Request) (string, Usage, error) {
++	if c.codexCompatibility() {
++		// Codex uses SSE even when the caller only needs the final text (titles,
++		// summaries). Reuse the established parser, cancellation and usage path.
++		message, usage, err := c.Stream(ctx, req, nil, nil, nil)
++		return message.Content, usage, err
++	}
+ 	resp, err := c.request(ctx, req, false)
+ 	if err != nil {
+ 		return "", Usage{}, err
+@@ -64,11 +70,18 @@ func (c *Responses) request(ctx context.Context, req Request, stream bool) (*htt
+ 			payload["prompt_cache_options"] = map[string]any{"ttl": "30m"}
+ 		}
+ 	}
++	var headers http.Header
++	if c.codexCompatibility() {
++		headers = c.codexHeaders(ctx)
++		if err := codexResponsesPayload(payload, req, headers); err != nil {
++			return nil, err
++		}
++	}
+ 	body, err := json.Marshal(payload)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+-	return c.postJSON(ctx, "/responses", body, stream, nil)
++	return c.postJSON(ctx, "/responses", body, stream, headers)
+ }
+ 
+ func responsesPayload(req Request, stream bool) (map[string]any, error) {

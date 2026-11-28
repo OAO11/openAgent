@@ -560,6 +560,8 @@ export const SETTINGS_ZH_CN = {
   "settings.importCustomHeaders": "导入",
   "settings.cliIdentityHeaders": "模拟 CLI",
   "settings.cliIdentityHeadersHint": "一键写入官方 CLI 身份请求头",
+  "settings.cliIdentityCodexCompatibility":
+    "选择“模拟 CLI → Codex”并保存后，Responses 请求会补充会话标识、窗口元数据和流式协议兼容，保留当前提示词与工具。是否允许接入由供应商决定。",
   "settings.cliIdentity.claude_code": "Claude Code",
   "settings.cliIdentity.codex": "Codex",
   "settings.cliIdentity.xai": "Grok",

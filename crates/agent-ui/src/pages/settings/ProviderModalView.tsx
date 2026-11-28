@@ -1194,6 +1194,11 @@ export function ProviderModalView({ viewModel }: { viewModel: ProviderModalViewM
                       </Button>
                     </div>
                   </div>
+                  {providerType === "codex" ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t("settings.cliIdentityCodexCompatibility")}
+                    </p>
+                  ) : null}
                   {headerImportOpen ? (
                     <div className="mt-3 min-w-0 rounded-xl bg-settings-tile p-3">
                       <Label

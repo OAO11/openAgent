@@ -15,6 +15,7 @@ import { createKBrainPromptClient, type KBrainPromptSnapshot } from "../kbrain/p
 import {
   appProvidersFromKBrain,
   kBrainSettingsUpdateForCatalogRefresh,
+  kBrainSettingsUpdateForFailover,
   kBrainSettingsUpdateFromAppSettings,
   kBrainSettingsUpdateFromLegacyProviders,
   loadKBrainProviderSettings,
@@ -773,6 +774,7 @@ export async function loadPersistedSettingsWithDefaults(): Promise<PersistedSett
     }
   }
 
+  await reconcileKBrainFailover(kbrainSettings.document, settings);
   settings = await loadKBrainMcpSettings(settings);
   return {
     settings: {
@@ -781,6 +783,16 @@ export async function loadPersistedSettingsWithDefaults(): Promise<PersistedSett
     },
     defaultWorkdir,
   };
+}
+
+async function reconcileKBrainFailover(document: KBrainSettingsDocument, settings: AppSettings) {
+  const update = kBrainSettingsUpdateForFailover(document, settings);
+  if (!update) return;
+  try {
+    await saveKBrainProviderSettings(update);
+  } catch (error) {
+    throw new SettingsStorageError("load_failed", error);
+  }
 }
 
 export async function loadPersistedSettings(): Promise<AppSettings> {
@@ -794,7 +806,11 @@ let rejectedProviderSave:
   | undefined;
 
 function providerSaveFingerprint(settings: AppSettings): string {
-  return JSON.stringify([settings.customProviders, settings.selectedModel ?? null]);
+  return JSON.stringify([
+    settings.customProviders,
+    settings.selectedModel ?? null,
+    settings.modelFailover,
+  ]);
 }
 
 function projectPromptFields(settings: AppSettings, path: string) {
@@ -910,7 +926,8 @@ export async function persistSettings(
   const staleRejectedProviders = recovery && providerSaveFingerprint(next) === recovery.fingerprint;
   const providersChanged =
     hasChanged(prev.customProviders, next.customProviders) ||
-    hasChanged(prev.selectedModel ?? null, next.selectedModel ?? null);
+    hasChanged(prev.selectedModel ?? null, next.selectedModel ?? null) ||
+    hasChanged(prev.modelFailover, next.modelFailover);
   // Provider records go to K-brain. A failure there must not stop the other domains from
   // saving: it used to throw before the local UI write, and failedProviderSave then made every
   // later save retry and throw again, so theme/locale/font changes were never persisted.

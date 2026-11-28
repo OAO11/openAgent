@@ -1,0 +1,355 @@
+diff --git a/internal/backend/settings_provider.go b/internal/backend/settings_provider.go
+index cc0d22e..0d8f839 100644
+--- a/internal/backend/settings_provider.go
++++ b/internal/backend/settings_provider.go
+@@ -277,6 +277,9 @@ func updateProvider(p config.Provider, in settingsProviderUpdate) (config.Provid
+ 	}
+ 	if in.RetryPolicy != nil {
+ 		p.RetryPolicy = in.RetryPolicy
++		if _, err := routing.ParseProviderRuntimeSettings(p); err != nil {
++			return p, err
++		}
+ 	}
+ 	if in.Metadata != nil {
+ 		if err := validateMetadata(in.Metadata); err != nil {
+diff --git a/internal/routing/failover.go b/internal/routing/failover.go
+index bf4445c..f367750 100644
+--- a/internal/routing/failover.go
++++ b/internal/routing/failover.go
+@@ -27,6 +27,8 @@ type RetryPolicy struct {
+ }
+ 
+ type FailoverConfig struct {
++	Enabled          bool
++	Queue            []string
+ 	MaxSwitches      int
+ 	FailureThreshold int
+ 	Cooldown         time.Duration
+@@ -69,9 +71,38 @@ func ParseProviderRuntimeSettings(provider config.Provider) (FailoverSettings, e
+ 		settings.Retry.MaxRetries = n
+ 	}
+ 	failover := provider.RetryPolicy
+-	if nested, ok := provider.RetryPolicy["failover"].(map[string]any); ok {
++	if raw, exists := provider.RetryPolicy["failover"]; exists {
++		nested, ok := raw.(map[string]any)
++		if !ok {
++			return settings, fmt.Errorf("retryPolicy.failover must be an object")
++		}
+ 		failover = nested
+ 	}
++	if raw, ok := failover["enabled"]; ok {
++		enabled, ok := raw.(bool)
++		if !ok {
++			return settings, fmt.Errorf("retryPolicy.failover.enabled must be a boolean")
++		}
++		settings.Failover.Enabled = enabled
++	}
++	if raw, ok := failover["queue"]; ok {
++		var queue []string
++		switch values := raw.(type) {
++		case []string:
++			queue = values
++		case []any:
++			for _, value := range values {
++				name, ok := value.(string)
++				if !ok {
++					return settings, fmt.Errorf("retryPolicy.failover.queue must contain provider IDs")
++				}
++				queue = append(queue, name)
++			}
++		default:
++			return settings, fmt.Errorf("retryPolicy.failover.queue must be an array")
++		}
++		settings.Failover.Queue = uniqueStrings(queue)
++	}
+ 	if raw, ok := failover["maxSwitches"]; ok {
+ 		n, err := runtimeInt(raw)
+ 		if err != nil || n < 0 {
+@@ -283,7 +314,7 @@ func (c *FailoverClient) Complete(ctx context.Context, req ai.Request) (string,
+ 		last = err
+ 		eligible := failoverEligible(err)
+ 		recordTarget(breakerKey(candidate.name, req.Model), false, eligible, candidate.settings.Failover.FailureThreshold, time.Now())
+-		if !eligible || i+1 >= c.maxAttempts(candidate.settings) || ctx.Err() != nil {
++		if !eligible || i+1 >= c.maxAttempts() || ctx.Err() != nil {
+ 			break
+ 		}
+ 	}
+@@ -372,7 +403,7 @@ func (c *FailoverClient) Stream(ctx context.Context, req ai.Request, onText, onT
+ 		}
+ 		eligible := failoverEligible(err)
+ 		recordTarget(breakerKey(candidate.name, req.Model), false, eligible, candidate.settings.Failover.FailureThreshold, time.Now())
+-		if committed || !eligible || ctx.Err() != nil || i+1 >= c.maxAttempts(candidate.settings) {
++		if committed || !eligible || ctx.Err() != nil || i+1 >= c.maxAttempts() {
+ 			break
+ 		}
+ 		// Buffered callbacks are intentionally discarded before the next candidate.
+@@ -384,6 +415,10 @@ func (c *FailoverClient) plan(model string) []failoverCandidate {
+ 	if len(c.candidates) == 0 {
+ 		return nil
+ 	}
++	// A circuit breaker must never redirect a request without explicit failover.
++	if c.maxSwitches <= 0 {
++		return []failoverCandidate{c.candidates[c.primary]}
++	}
+ 	now := time.Now()
+ 	plan := make([]failoverCandidate, 0, len(c.candidates))
+ 	for _, candidate := range c.candidates {
+@@ -397,12 +432,8 @@ func (c *FailoverClient) plan(model string) []failoverCandidate {
+ 	return plan
+ }
+ 
+-func (c *FailoverClient) maxAttempts(settings FailoverSettings) int {
+-	switches := c.maxSwitches
+-	if switches == 0 {
+-		switches = settings.Failover.MaxSwitches
+-	}
+-	max := switches + 1
++func (c *FailoverClient) maxAttempts() int {
++	max := c.maxSwitches + 1
+ 	if max > len(c.candidates) {
+ 		max = len(c.candidates)
+ 	}
+diff --git a/internal/routing/failover_metadata_test.go b/internal/routing/failover_metadata_test.go
+index 30ca500..f888f8e 100644
+--- a/internal/routing/failover_metadata_test.go
++++ b/internal/routing/failover_metadata_test.go
+@@ -44,7 +44,7 @@ func TestFailoverUsesDestinationMaxOutput(t *testing.T) {
+ 				fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}\n\ndata: [DONE]\n\n")
+ 			}))
+ 			defer fallback.Close()
+-			policy := map[string]any{"mode": "off", "failover": map[string]any{"maxSwitches": 1}}
++			policy := map[string]any{"mode": "off", "failover": map[string]any{"enabled": true, "queue": []any{"b"}, "maxSwitches": 1}}
+ 			model := config.Model{ID: "shared", Providers: []string{"a", "b"}, Context: 200000, MaxOut: 128000}
+ 			model.SetProviderMetadata("b", config.Model{Context: 200000, MaxOut: 32000})
+ 			cfg := &config.Config{DefaultModel: "shared", Providers: map[string]config.Provider{
+@@ -88,7 +88,7 @@ func TestFailoverExcludesNarrowerOrIncompatibleCandidates(t *testing.T) {
+ 			model := config.Model{ID: "shared", Providers: []string{"a", "b"}, Context: 200000, MaxOut: 128000, Vision: true, InputModalities: []string{"text", "image"}}
+ 			model.SetProviderMetadata("b", config.Model{Context: tc.context, MaxOut: 32000, InputModalities: tc.modalities})
+ 			cfg := &config.Config{Models: map[string]config.Model{"shared": model}, Providers: map[string]config.Provider{
+-				"a": {API: ai.APIChatCompletions, BaseURL: "http://fixture.invalid", APIKey: "key"},
++				"a": {API: ai.APIChatCompletions, BaseURL: "http://fixture.invalid", APIKey: "key", RetryPolicy: map[string]any{"failover": map[string]any{"enabled": true, "queue": []any{"b"}}}},
+ 				"b": {API: ai.APIChatCompletions, BaseURL: "http://fixture.invalid", APIKey: "key"},
+ 			}}
+ 			route, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "a", false)
+diff --git a/internal/routing/failover_retry_http_test.go b/internal/routing/failover_retry_http_test.go
+index 9567d57..ecc3b70 100644
+--- a/internal/routing/failover_retry_http_test.go
++++ b/internal/routing/failover_retry_http_test.go
+@@ -28,12 +28,12 @@ func TestFailoverRetryPolicyUsesLiveAgentTotalAttemptCount(t *testing.T) {
+ 	}))
+ 	defer fallback.Close()
+ 
+-	policy := map[string]any{"mode": "custom", "maxRetries": 2, "failover": map[string]any{"maxSwitches": 1}}
++	policy := map[string]any{"mode": "custom", "maxRetries": 2, "failover": map[string]any{"enabled": true, "queue": []any{"fallback"}, "maxSwitches": 1}}
+ 	cfg := &config.Config{
+ 		DefaultModel: "model",
+ 		Providers: map[string]config.Provider{
+ 			"primary":  {API: ai.APIChatCompletions, BaseURL: primary.URL, APIKey: "key", RetryPolicy: policy},
+-			"fallback": {API: ai.APIChatCompletions, BaseURL: fallback.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"maxSwitches": 1}}},
++			"fallback": {API: ai.APIChatCompletions, BaseURL: fallback.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"enabled": true, "queue": []any{"fallback"}, "maxSwitches": 1}}},
+ 		},
+ 		Models: map[string]config.Model{"model": {ID: "model", Context: 200000, Providers: []string{"primary", "fallback"}}},
+ 	}
+diff --git a/internal/routing/failover_route.go b/internal/routing/failover_route.go
+index 8b5d2ce..8eec7bf 100644
+--- a/internal/routing/failover_route.go
++++ b/internal/routing/failover_route.go
+@@ -36,7 +36,18 @@ func ResolveFailoverRouteContext(ctx context.Context, cfg *config.Config, modelN
+ 		primaryModalities = append(primaryModalities, "image")
+ 	}
+ 	primaryVendor := providerVendor(providerName, primaryProvider)
+-	providerNames := append([]string{providerName}, model.Providers...)
++	primarySettings, err := ParseProviderRuntimeSettings(primaryProvider)
++	if err != nil {
++		return Route{}, err
++	}
++	// Merely advertising the same model does not authorize another provider.
++	// Keep the selected provider first, followed only by the user's opt-in queue.
++	providerNames := []string{providerName}
++	maxSwitches := 0
++	if primarySettings.Failover.Enabled && primarySettings.Failover.MaxSwitches > 0 {
++		providerNames = append(providerNames, primarySettings.Failover.Queue...)
++		maxSwitches = primarySettings.Failover.MaxSwitches
++	}
+ 	providerNames = uniqueStrings(providerNames)
+ 
+ 	candidates := make([]failoverCandidate, 0, len(providerNames))
+@@ -108,7 +119,7 @@ func ResolveFailoverRouteContext(ctx context.Context, cfg *config.Config, modelN
+ 	if primaryIndex != 0 {
+ 		candidates[0], candidates[primaryIndex] = candidates[primaryIndex], candidates[0]
+ 	}
+-	client := &FailoverClient{candidates: candidates, primary: 0, maxSwitches: candidates[0].settings.Failover.MaxSwitches}
++	client := &FailoverClient{candidates: candidates, primary: 0, maxSwitches: maxSwitches}
+ 	return Route{
+ 		ModelName: modelName, ProviderName: providerName,
+ 		Provider: primaryProvider, Model: model, APIModel: apiID,
+diff --git a/internal/routing/failover_test.go b/internal/routing/failover_test.go
+index 8fcc5be..d81910d 100644
+--- a/internal/routing/failover_test.go
++++ b/internal/routing/failover_test.go
+@@ -139,8 +139,8 @@ func TestFailoverHTTPFaultFallsBackAndKeepsSameVendorQueue(t *testing.T) {
+ 	cfg := &config.Config{
+ 		DefaultModel: "model",
+ 		Providers: map[string]config.Provider{
+-			"primary":  {API: ai.APIChatCompletions, BaseURL: primary.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"maxSwitches": 1}}},
+-			"fallback": {API: ai.APIChatCompletions, BaseURL: fallback.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"maxSwitches": 1}}},
++			"primary":  {API: ai.APIChatCompletions, BaseURL: primary.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"enabled": true, "queue": []any{"fallback"}, "maxSwitches": 1}}},
++			"fallback": {API: ai.APIChatCompletions, BaseURL: fallback.URL, APIKey: "key", RetryPolicy: map[string]any{"mode": "off", "failover": map[string]any{"enabled": true, "queue": []any{"fallback"}, "maxSwitches": 1}}},
+ 			"foreign":  {API: ai.APIResponses, BaseURL: fallback.URL, APIKey: "key"},
+ 		},
+ 		Models: map[string]config.Model{"model": {ID: "model", Context: 200000, Providers: []string{"primary", "fallback", "foreign"}}},
+diff --git a/internal/routing/openagent_provider_controls_test.go b/internal/routing/openagent_provider_controls_test.go
+index 8dca3a7..54f03de 100644
+--- a/internal/routing/openagent_provider_controls_test.go
++++ b/internal/routing/openagent_provider_controls_test.go
+@@ -95,6 +95,9 @@ func TestOpenAgentDisabledProviderRoutesAndFailover(t *testing.T) {
+ 	if _, err := ClientForProviderOptional(cfg.Providers["off"], "off", 0); err == nil {
+ 		t.Fatal("disabled optional client accepted")
+ 	}
++	primary := cfg.Providers["on"]
++	primary.RetryPolicy = map[string]any{"failover": map[string]any{"enabled": true, "queue": []any{"off"}}}
++	cfg.Providers["on"] = primary
+ 	route, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "on", false)
+ 	if err != nil {
+ 		t.Fatal(err)
+diff --git a/internal/routing/openagent_provider_selection_test.go b/internal/routing/openagent_provider_selection_test.go
+new file mode 100644
+index 0000000..f864c5f
+--- /dev/null
++++ b/internal/routing/openagent_provider_selection_test.go
+@@ -0,0 +1,122 @@
++package routing
++
++import (
++	"fmt"
++	"net/http"
++	"net/http/httptest"
++	"slices"
++	"sync/atomic"
++	"testing"
++	"time"
++
++	"github.com/Stack-Cairn/K-brain/internal/ai"
++	"github.com/Stack-Cairn/K-brain/internal/config"
++)
++
++func TestOpenAgentSelectedProviderDoesNotImplicitlyFailOver(t *testing.T) {
++	for _, streaming := range []bool{false, true} {
++		for _, tc := range []struct {
++			name     string
++			failover map[string]any
++		}{
++			{"unset", nil},
++			{"disabled", map[string]any{"enabled": false, "queue": []any{"casa"}, "maxSwitches": 3}},
++			{"empty queue", map[string]any{"enabled": true, "queue": []any{}, "maxSwitches": 3}},
++			{"zero switches", map[string]any{"enabled": true, "queue": []any{"casa"}, "maxSwitches": 0}},
++		} {
++			t.Run(fmt.Sprintf("%s/stream=%v", tc.name, streaming), func(t *testing.T) {
++				ResetFailoverBreakers()
++				var selectedCalls, otherCalls atomic.Int32
++				selected := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++					selectedCalls.Add(1)
++					if r.Header.Get("Authorization") != "Bearer selected-key" {
++						t.Error("wrong selected credentials")
++					}
++					w.WriteHeader(http.StatusForbidden)
++					fmt.Fprint(w, `{"error":{"message":"This account only allows Codex official clients","type":"forbidden_error"}}`)
++				}))
++				defer selected.Close()
++				other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++					otherCalls.Add(1)
++					w.Header().Set("Content-Type", "text/event-stream")
++					fmt.Fprint(w, "data: {\"choices\":[{\"delta\":{\"content\":\"wrong provider\"}}]}\n\ndata: [DONE]\n\n")
++				}))
++				defer other.Close()
++				retry := map[string]any{"mode": "off"}
++				if tc.failover != nil {
++					retry["failover"] = tc.failover
++				}
++				cfg := &config.Config{DefaultProvider: "casa", Models: map[string]config.Model{
++					"shared": {ID: "shared", Context: 200000, Providers: []string{"casa", "selected"}},
++				}, Providers: map[string]config.Provider{
++					"selected": {Type: "codex", API: ai.APIChatCompletions, BaseURL: selected.URL, APIKey: "selected-key", RetryPolicy: retry},
++					"casa":     {Type: "codex", API: ai.APIChatCompletions, BaseURL: other.URL, APIKey: "other-key", RetryPolicy: map[string]any{"mode": "off"}},
++				}}
++				route, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "selected", false)
++				if err != nil {
++					t.Fatal(err)
++				}
++				for attempt := int32(1); attempt <= 2; attempt++ {
++					// Verify both normal 403 handling and a previously opened circuit.
++					if attempt == 2 {
++						recordTarget(breakerKey("selected", "shared"), false, true, 1, time.Now())
++					}
++					if streaming {
++						_, _, err = route.Client.Stream(t.Context(), ai.Request{Model: "shared"}, nil, nil, nil)
++					} else {
++						_, _, err = route.Client.Complete(t.Context(), ai.Request{Model: "shared"})
++					}
++					if err == nil || selectedCalls.Load() != attempt || otherCalls.Load() != 0 {
++						t.Fatalf("selected=%d other=%d error=%v", selectedCalls.Load(), otherCalls.Load(), err)
++					}
++				}
++			})
++		}
++	}
++}
++
++func TestOpenAgentFailoverHonorsExplicitQueue(t *testing.T) {
++	off := false
++	providers := map[string]config.Provider{}
++	for _, name := range []string{"selected", "first", "second", "unlisted", "disabled", "foreign", "inactive"} {
++		providers[name] = config.Provider{Type: "codex", API: ai.APIChatCompletions, BaseURL: "http://fixture.invalid", APIKey: "fixture", ActiveModels: []string{"shared"}}
++	}
++	p := providers["disabled"]
++	p.Enabled = &off
++	providers["disabled"] = p
++	p = providers["foreign"]
++	p.Type = "claude_code"
++	providers["foreign"] = p
++	p = providers["inactive"]
++	p.ActiveModels = []string{"other"}
++	providers["inactive"] = p
++	p = providers["selected"]
++	p.RetryPolicy = map[string]any{"failover": map[string]any{"enabled": true, "queue": []any{"second", "disabled", "missing", "foreign", "inactive", "first", "second", "selected"}, "maxSwitches": 2}}
++	providers["selected"] = p
++	cfg := &config.Config{Providers: providers, Models: map[string]config.Model{"shared": {ID: "shared", Context: 200000, Providers: []string{"unlisted", "first", "second", "selected", "disabled", "foreign", "inactive"}}}}
++	route, err := ResolveFailoverRouteContext(t.Context(), cfg, "shared", "selected", false)
++	if err != nil {
++		t.Fatal(err)
++	}
++	client := route.Client.(*FailoverClient)
++	var names []string
++	for _, candidate := range client.candidates {
++		names = append(names, candidate.name)
++	}
++	if !slices.Equal(names, []string{"selected", "second", "first"}) {
++		t.Fatalf("queue = %v", names)
++	}
++}
++
++func TestOpenAgentFailoverPolicyRejectsMalformedOptIn(t *testing.T) {
++	for _, policy := range []map[string]any{
++		{"failover": true},
++		{"failover": map[string]any{"enabled": "true"}},
++		{"failover": map[string]any{"queue": "other"}},
++		{"failover": map[string]any{"queue": []any{1}}},
++	} {
++		if _, err := ParseProviderRuntimeSettings(config.Provider{RetryPolicy: policy}); err == nil {
++			t.Fatalf("accepted malformed failover: %v", policy)
++		}
++	}
++}
+diff --git a/internal/routing/trajectory_diagnostic_test.go b/internal/routing/trajectory_diagnostic_test.go
+index 83b1241..011df4c 100644
+--- a/internal/routing/trajectory_diagnostic_test.go
++++ b/internal/routing/trajectory_diagnostic_test.go
+@@ -22,7 +22,7 @@ func TestTrajectoryActualHTTPFailoverDiagnostics(t *testing.T) {
+ 	primary, fallback := ai.New(first.URL, "private-primary-key"), ai.New(second.URL, "private-fallback-key")
+ 	primary.MaxRetries = 1
+ 	fallback.MaxRetries = 1
+-	client := &FailoverClient{candidates: []failoverCandidate{testCandidate("primary", primary, 1), testCandidate("fallback", fallback, 1)}}
++	client := &FailoverClient{maxSwitches: 1, candidates: []failoverCandidate{testCandidate("primary", primary, 1), testCandidate("fallback", fallback, 1)}}
+ 	var events []ai.RuntimeDiagnostic
+ 	ctx := ai.WithRuntimeDiagnosticObserver(context.Background(), func(event ai.RuntimeDiagnostic) { events = append(events, event) })
+ 	msg, _, err := client.Stream(ctx, ai.Request{Model: "model", Messages: []ai.Message{{Role: "user", Content: "answer"}}}, nil, nil, nil)

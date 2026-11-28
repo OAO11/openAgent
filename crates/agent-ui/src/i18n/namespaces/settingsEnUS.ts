@@ -566,6 +566,8 @@ export const SETTINGS_EN_US = {
   "settings.importCustomHeaders": "Import",
   "settings.cliIdentityHeaders": "Mimic CLI",
   "settings.cliIdentityHeadersHint": "Fill in official CLI identity headers",
+  "settings.cliIdentityCodexCompatibility":
+    "Select “Mimic CLI → Codex” and save to enable session headers, window metadata and streaming compatibility for Responses requests. Your prompts and tools are preserved. Access remains subject to provider policy.",
   "settings.cliIdentity.claude_code": "Claude Code",
   "settings.cliIdentity.codex": "Codex",
   "settings.cliIdentity.xai": "Grok",

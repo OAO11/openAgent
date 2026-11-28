@@ -23,7 +23,20 @@ export type KBrainSettingsModel = Partial<ProviderModelConfig> & {
   vision?: boolean;
 };
 
-export type KBrainSettingsProvider = Omit<Partial<CustomProvider>, "models"> & {
+export type KBrainProviderRetryPolicy = {
+  mode: "default" | "off" | "custom";
+  maxRetries?: number;
+  failover?: {
+    enabled: boolean;
+    queue: string[];
+    maxSwitches: number;
+    failureThreshold: number;
+    cooldownSeconds: number;
+  };
+};
+
+export type KBrainSettingsProvider = Omit<Partial<CustomProvider>, "models" | "retryPolicy"> & {
+  retryPolicy?: KBrainProviderRetryPolicy;
   id: string;
   name: string;
   api?: string;
@@ -47,7 +60,8 @@ export type KBrainSettingsDocument = {
   webSearch?: unknown;
 };
 
-export type KBrainProviderUpdate = Omit<CustomProvider, "apiKey"> & {
+export type KBrainProviderUpdate = Omit<CustomProvider, "apiKey" | "retryPolicy"> & {
+  retryPolicy?: KBrainProviderRetryPolicy;
   apiKey?: string;
   clearApiKey?: boolean;
 };

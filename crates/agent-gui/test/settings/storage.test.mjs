@@ -647,3 +647,41 @@ for (const colorTheme of ["falcon-dark-coffee", "falcon-islands-pink"]) {
     });
   });
 }
+
+
+test("changing only failover settings reaches K-brain and survives reload", async () => {
+  let modelFailover;
+  await withSettingsFixture({ browser: false, invoke: async (command, args) => {
+    if (command === "settings_load_all") return { modelFailover };
+    if (command === "settings_save_model_failover") modelFailover = args.payload;
+    return {};
+  } }, async ({ storage, fixture, loader }) => {
+    const initial = await storage.loadPersistedSettings();
+    const { normalizeSettings } = loader.loadModule("src/lib/settings/index.ts");
+    const next = normalizeSettings({ ...initial, modelFailover: { codex: { enabled: true, queue: ["backend-provider"], maxSwitches: 2, cooldownSeconds: 45, failureThreshold: 3 } } });
+    await storage.persistSettings(initial, next);
+    const puts = fixture.requests.filter(r => r.method === "PUT" && r.path === "/v1/settings");
+    assert.equal(puts.length, 1);
+    assert.deepEqual(puts[0].body.providers[0].retryPolicy.failover, next.modelFailover.codex);
+    assert.equal((await storage.loadPersistedSettings()).modelFailover.codex.enabled, true);
+    assert.equal(fixture.requests.filter(r => r.method === "PUT" && r.path === "/v1/settings").length, 1);
+    const off = normalizeSettings({ ...next, modelFailover: { codex: { ...next.modelFailover.codex, enabled: false } } });
+    await storage.persistSettings(next, off);
+    assert.equal(fixture.document().providers[0].retryPolicy.failover.enabled, false);
+    assert.equal(fixture.document().providers[0].retryPolicy.failover.maxSwitches, 0);
+  });
+});
+
+test("desktop startup restores an explicitly configured SQLite failover queue into K-brain", async () => {
+  const modelFailover = { codex: { enabled: true, queue: ["backend-provider"], maxSwitches: 1, cooldownSeconds: 60, failureThreshold: 4 } };
+  await withSettingsFixture({ browser: false, invoke: async command => command === "settings_load_all" ? { modelFailover } : {} }, async ({ storage, fixture }) => {
+    const loaded = await storage.loadPersistedSettings();
+    assert.equal(loaded.modelFailover.codex.enabled, true);
+    const puts = fixture.requests.filter(r => r.method === "PUT" && r.path === "/v1/settings");
+    assert.equal(puts.length, 1);
+    assert.equal(puts[0].body.defaultProvider, undefined);
+    assert.deepEqual(puts[0].body.providers[0].retryPolicy.failover.queue, ["backend-provider"]);
+    await storage.loadPersistedSettings();
+    assert.equal(fixture.requests.filter(r => r.method === "PUT" && r.path === "/v1/settings").length, 1);
+  });
+});
