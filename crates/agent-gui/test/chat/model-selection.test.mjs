@@ -310,3 +310,21 @@ test("selected model json round-trips and rejects malformed payloads", () => {
   assert.equal(settings.parseSelectedModelJson('{"model":"m1"}'), undefined);
   assert.equal(settings.serializeSelectedModelJson(undefined), undefined);
 });
+
+for (const locale of ["zh-CN", "en-US"]) {
+  test(`disabled-provider errors use the ${locale} interface language`, () => {
+    const app = settings.normalizeSettings({ locale, customProviders: [
+      { ...provider({ id: "off" }), enabled: false },
+    ] });
+    assert.throws(() => modelSelection.resolveEffectiveChatModelSelection({
+      settings: app, conversationSelectedModel: { customProviderId: "off", model: "gpt-5" },
+    }), error => {
+      assert.equal(error.code, "model_config_model_disabled");
+      if (locale === "en-US") {
+        assert.match(error.message, /provider.*disabled/i);
+        assert.doesNotMatch(error.message, /[\u3400-\u9fff]/);
+      } else assert.match(error.message, /供应商已停用/);
+      return true;
+    });
+  });
+}

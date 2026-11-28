@@ -8,9 +8,6 @@
     "projection.freshMs": 6.1,
     "projection.reprojectMs": 0.2,
     "projection.reuseRatio": 0.033,
-    "store.usPerEvent200": 0.7,
-    "store.usPerEvent2000": 1,
-    "store.historyScaling": 1.429,
     "lru.persistedBytes": 439175
   },
   "updated": "2026-11-22",

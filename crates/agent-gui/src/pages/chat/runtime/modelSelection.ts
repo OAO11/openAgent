@@ -1,4 +1,5 @@
 import type { ModelConfigErrorCode } from "@liveagent/ui/lib/chat/modelConfigRejection";
+import { t } from "../../../i18n/config";
 import type { AppSettings, ProviderId, SelectedModel } from "../../../lib/settings";
 import {
   type GatewaySelectedModelEvent,
@@ -48,7 +49,7 @@ export function resolveEffectiveChatModelSelection(params: {
     if (!activeSelectedModel) {
       throw new ChatModelSelectionError(
         "model_config_missing",
-        "请先在输入框左下角选择一个模型（或先去设置添加模型）。",
+        t("chat.modelSelection.missing", settings.locale),
       );
     }
 
@@ -57,15 +58,15 @@ export function resolveEffectiveChatModelSelection(params: {
     if (!provider) {
       throw new ChatModelSelectionError(
         "model_config_provider_missing",
-        "所选供应商不存在，请重新选择模型。",
+        t("chat.modelSelection.providerMissing", settings.locale),
       );
     }
     if (provider.enabled === false || !provider.activeModels.includes(model)) {
       throw new ChatModelSelectionError(
         "model_config_model_disabled",
         provider.enabled === false
-          ? "所选供应商已停用，请启用供应商或重新选择模型。"
-          : "所选模型未启用，请重新选择模型。",
+          ? t("chat.modelSelection.providerDisabled", settings.locale)
+          : t("chat.modelSelection.modelDisabled", settings.locale),
       );
     }
 
@@ -87,7 +88,7 @@ export function resolveEffectiveChatModelSelection(params: {
   if (!customProviderId || !model || !providerType) {
     throw new ChatModelSelectionError(
       "model_config_invalid",
-      "远程请求携带的模型配置无效，请在 WebUI 重新选择模型后重试。",
+      t("chat.modelSelection.remoteInvalid", settings.locale),
     );
   }
 
@@ -95,19 +96,19 @@ export function resolveEffectiveChatModelSelection(params: {
   if (!provider) {
     throw new ChatModelSelectionError(
       "model_config_provider_missing",
-      "远程请求所选模型对应的供应商不存在，请同步桌面端设置后在 WebUI 重新选择模型。",
+      t("chat.modelSelection.remoteProviderMissing", settings.locale),
     );
   }
   if (provider.type !== providerType) {
     throw new ChatModelSelectionError(
       "model_config_provider_type_mismatch",
-      "远程请求所选模型的供应商类型与桌面端配置不一致，请同步桌面端设置后在 WebUI 重新选择模型。",
+      t("chat.modelSelection.remoteProviderMismatch", settings.locale),
     );
   }
   if (provider.enabled === false || !provider.activeModels.includes(model)) {
     throw new ChatModelSelectionError(
       "model_config_model_disabled",
-      "远程请求所选模型未在桌面端启用，请同步桌面端设置后在 WebUI 重新选择模型。",
+      t("chat.modelSelection.remoteModelDisabled", settings.locale),
     );
   }
 

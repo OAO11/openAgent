@@ -18,8 +18,10 @@ import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CdpClient } from "../../../scripts/testing/session-sync-cdp.mjs";
+import { createRequire } from "node:module";
+import { CdpClient } from "./cdp-client.mjs";
 
+const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(here, "..");
 const args = Object.fromEntries(
@@ -34,6 +36,16 @@ const repeat = Number(args.repeat ?? 1);
 
 function findChrome() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  const installed = process.platform === "win32"
+    ? [
+        path.join(process.env.PROGRAMFILES ?? "C:/Program Files", "Google/Chrome/Application/chrome.exe"),
+        path.join(process.env["PROGRAMFILES(X86)"] ?? "C:/Program Files (x86)", "Microsoft/Edge/Application/msedge.exe"),
+      ]
+    : process.platform === "darwin"
+      ? ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]
+      : ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"];
+  const installedBrowser = installed.find((candidate) => existsSync(candidate));
+  if (installedBrowser) return installedBrowser;
   const cache = path.join(os.homedir(), "Library/Caches/ms-playwright");
   const candidates = [
     "chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
@@ -46,11 +58,12 @@ function findChrome() {
 
 function build() {
   const result = spawnSync(
-    path.join(appRoot, "node_modules/.bin/vite"),
-    ["build", "--config", "perf/vite.config.ts"],
+    process.execPath,
+    [path.join(path.dirname(require.resolve("vite/package.json")), "bin/vite.js"), "build", "--config", "perf/vite.config.ts"],
     {
       cwd: appRoot,
       stdio: "inherit",
+      windowsHide: true,
       env: { ...process.env, ...(args.plain ? { PERF_PLAIN: "1" } : {}) },
     },
   );
@@ -73,9 +86,10 @@ function serve(root) {
 }
 
 async function launchChrome() {
-  const profile = mkdtempSync(path.join(os.tmpdir(), "la-perf-chrome-"));
+  const browser = findChrome();
+  const profile = mkdtempSync(path.join(os.tmpdir(), "openagent-perf-chrome-"));
   const child = spawn(
-    findChrome(),
+    browser,
     [
       "--headless=new",
       "--remote-debugging-port=0",
@@ -92,7 +106,7 @@ async function launchChrome() {
       ...(process.env.CI === "true" ? ["--no-sandbox"] : []),
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"] },
+    { stdio: ["ignore", "ignore", "pipe"], windowsHide: true },
   );
   const endpoint = await new Promise((resolve, reject) => {
     let buffer = "";
@@ -121,9 +135,21 @@ async function launchChrome() {
   client.timeoutMs = 900_000;
   return {
     client,
-    close: () => {
-      child.kill("SIGTERM");
-      setTimeout(() => rmSync(profile, { recursive: true, force: true }), 500);
+    close: async () => {
+      const exited = new Promise((resolve) => {
+        if (child.exitCode !== null || child.signalCode !== null) return resolve();
+        const timer = setTimeout(() => { child.kill(); resolve(); }, 5000);
+        child.once("exit", () => { clearTimeout(timer); resolve(); });
+      });
+      await client.request("Browser.close").catch(() => child.kill());
+      client.close();
+      await exited;
+      const target = path.resolve(profile);
+      if (path.dirname(target) !== path.resolve(os.tmpdir()) || !path.basename(target).startsWith("openagent-perf-chrome-")) {
+        throw new Error("Refusing to remove a browser profile outside the temporary harness directory");
+      }
+      try { rmSync(target, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }); }
+      catch (error) { console.warn(`Temporary harness profile retained: ${target} (${error.code})`); }
     },
   };
 }
@@ -352,8 +378,8 @@ const SCENARIOS = {
     await delay(2000);
     await client.evaluate(LONG_TASKS);
     await client.request("Emulation.setCPUThrottlingRate", { rate: throttle });
-    await client.request("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "f", code: "KeyF", windowsVirtualKeyCode: 70, modifiers: 4 });
-    await client.request("Input.dispatchKeyEvent", { type: "keyUp", key: "f", code: "KeyF", windowsVirtualKeyCode: 70, modifiers: 4 });
+    await client.request("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "f", code: "KeyF", windowsVirtualKeyCode: 70, modifiers: process.platform === "darwin" ? 4 : 2 });
+    await client.request("Input.dispatchKeyEvent", { type: "keyUp", key: "f", code: "KeyF", windowsVirtualKeyCode: 70, modifiers: process.platform === "darwin" ? 4 : 2 });
     await delay(300);
     const coldMs = await client.evaluate(`(async () => {
       const input = document.querySelector("[data-transcript-find] input");
@@ -603,11 +629,13 @@ async function main() {
   if (args["no-build"] !== "true") build();
   const server = await serve(path.join(here, args.plain ? "dist-plain" : "dist"));
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
-  const { client, close } = await launchChrome();
-  await client.request("Page.enable");
-  await client.request("Performance.enable");
+  let browser;
   const results = [];
   try {
+    browser = await launchChrome();
+    const { client } = browser;
+    await client.request("Page.enable");
+    await client.request("Performance.enable");
     for (const scenario of scenarios) {
       for (const throttle of throttles) {
         for (let run = 0; run < repeat; run += 1) {
@@ -620,8 +648,7 @@ async function main() {
       }
     }
   } finally {
-    close();
-    server.close();
+    try { await browser?.close(); } finally { server.close(); }
   }
   if (args.out) writeFileSync(args.out, `${JSON.stringify(results, null, 2)}\n`);
 }

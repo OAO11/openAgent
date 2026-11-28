@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Performance regression gate built on the node micro-benchmarks in
-// crates/agent-gui/perf (SSE record splitting, transcript projection, WebUI
-// transcript store, measurement LRU).
+// crates/agent-gui/perf (SSE record splitting, desktop transcript projection, measurement LRU).
 //
 // Wall-clock numbers on shared CI runners are noisy, and they also differ by
 // engine and memory bandwidth in ways a CPU calibration does not capture
@@ -9,7 +8,7 @@
 // on the Node 26 machine that recorded the baseline). So the gate is built on
 // signals that survive a slow, busy or different machine:
 //   - scaling ratios are the primary gate: cost for 8x the event size (SSE),
-//     10x the history (store), re-projection vs. fresh projection. They need
+//     re-projection vs. fresh projection. They need
 //     no baseline, are the same on any engine, and catch the regressions that
 //     matter: work that grows quadratically with event or conversation size;
 //   - every benchmark runs in several fresh processes and the median is used;
@@ -48,7 +47,7 @@ export const BASELINE_FILE = path.join(repoRoot, "scripts/budgets/perf-micro-bas
 //   - SSE times: CI ran at ~4x the baseline after normalization (engine and
 //     memory differences); the backstop allows 10x. The quadratic splitter
 //     measured 30-100x.
-//   - store/projection times: CI ran at 1.2-2x; the backstop allows 5-6x.
+//   - projection times: CI ran at 1.2-2x; the backstop allows 5-6x.
 export const METRICS = [
   { key: "sse.scaling16vs2", label: "SSE split 16 MB / 2 MB", kind: "ratio", max: 30 },
   { key: "sse.incremental2mbMs", label: "SSE split, 2 MB event, fastest run (ms)", kind: "time", factor: 10, floor: 5 },
@@ -56,9 +55,6 @@ export const METRICS = [
   { key: "projection.reuseRatio", label: "Re-projection / projection", kind: "ratio", max: 0.5 },
   { key: "projection.freshMs", label: "Projection, 2000 messages (ms)", kind: "time", factor: 5, floor: 10 },
   { key: "projection.reprojectMs", label: "Re-projection, same messages (ms)", kind: "time", factor: 6, floor: 3 },
-  { key: "store.historyScaling", label: "Store event 2000 / 200 turns", kind: "ratio", max: 5 },
-  { key: "store.usPerEvent200", label: "Store token event, 200 turns (us)", kind: "time", factor: 5, floor: 3 },
-  { key: "store.usPerEvent2000", label: "Store token event, 2000 turns (us)", kind: "time", factor: 5, floor: 3 },
   { key: "lru.persistedBytes", label: "Measurement snapshot (bytes)", kind: "exact", tolerance: 0.05 },
 ];
 
@@ -149,13 +145,6 @@ export function measure(repeat) {
     add("projection.freshMs", projection.freshMedianMs);
     add("projection.reprojectMs", projection.reprojectMedianMs);
     add("projection.reuseRatio", projection.reprojectMedianMs / Math.max(0.05, projection.freshMedianMs));
-
-    const store = runBench("perf/store-bench.mjs");
-    const small = store.find((row) => row.turns === 200);
-    const large = store.find((row) => row.turns === 2000);
-    add("store.usPerEvent200", small.usPerEvent);
-    add("store.usPerEvent2000", large.usPerEvent);
-    add("store.historyScaling", large.usPerEvent / Math.max(0.05, small.usPerEvent));
 
     const [lru] = runBench("perf/lru-bench.mjs");
     add("lru.persistedBytes", lru.bytes);

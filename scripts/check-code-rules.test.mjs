@@ -203,7 +203,7 @@ test("perf gate: ratios are absolute, times are a wide normalized backstop", () 
     metrics: {
       "sse.incremental2mbMs": 2,
       "projection.reuseRatio": 0.03,
-      "store.usPerEvent200": 1,
+      "projection.reprojectMs": 1,
       "lru.persistedBytes": 1000,
     },
   };
@@ -213,17 +213,17 @@ test("perf gate: ratios are absolute, times are a wide normalized backstop", () 
     "sse.scaling16vs2": 5,
     "sse.incremental2mbMs": 8,
     "projection.reuseRatio": 0.2,
-    "store.usPerEvent200": 4.9,
+    "projection.reprojectMs": 4.9,
     "lru.persistedBytes": 1040,
   };
   const result = rows(fine);
   assert.equal(result["sse.scaling16vs2"], "ok");
   assert.equal(result["sse.incremental2mbMs"], "ok", "4x the baseline is engine/runner noise, not a regression");
   assert.equal(result["projection.reuseRatio"], "ok");
-  assert.equal(result["store.usPerEvent200"], "ok", "limit is max(1*5, 1+3) = 5");
+  assert.equal(result["projection.reprojectMs"], "ok", "limit is max(1*6, 1+3) = 6");
   assert.equal(result["lru.persistedBytes"], "ok");
   assert.equal(result["projection.freshMs"], "missing", "a gated metric without baseline fails");
-  assert.equal(result["store.historyScaling"], "missing", "a ratio that was not measured fails");
+  assert.equal(rows({})["projection.reuseRatio"], "missing", "a ratio that was not measured fails");
 
   assert.equal(rows({ ...fine, "sse.scaling16vs2": 100 })["sse.scaling16vs2"], "fail", "quadratic growth");
   assert.equal(rows({ ...fine, "sse.scaling16vs2": 100 }, 0.1)["sse.scaling16vs2"], "fail", "ratios ignore machine speed");

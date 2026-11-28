@@ -1,5 +1,6 @@
 import { createHostTranslations, type Locale } from "@liveagent/ui/i18n/hostTranslations";
 import { CHAT_PAGE_TRANSLATIONS } from "./chatPageTranslations";
+import { MODEL_SELECTION_TRANSLATIONS } from "./modelSelectionTranslations";
 import { PROVIDER_IMPORT_TRANSLATIONS } from "./providerImportTranslations";
 
 export type { Locale } from "@liveagent/ui/i18n/hostTranslations";
@@ -16,6 +17,7 @@ export {
 export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> = {
   "zh-CN": {
     ...CHAT_PAGE_TRANSLATIONS["zh-CN"],
+    ...MODEL_SELECTION_TRANSLATIONS["zh-CN"],
     ...PROVIDER_IMPORT_TRANSLATIONS["zh-CN"],
     "settings.providerEnabled": "已启用",
     "settings.providerDisabled": "已停用",
@@ -406,6 +408,7 @@ export const GUI_TRANSLATION_OVERRIDES: Record<Locale, Record<string, string>> =
   },
   "en-US": {
     ...CHAT_PAGE_TRANSLATIONS["en-US"],
+    ...MODEL_SELECTION_TRANSLATIONS["en-US"],
     ...PROVIDER_IMPORT_TRANSLATIONS["en-US"],
     "settings.providerEnabled": "Enabled",
     "settings.providerDisabled": "Disabled",

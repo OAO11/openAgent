@@ -1033,7 +1033,7 @@ export const HistoryRow = memo(function HistoryRow(props: HistoryRowProps) {
                 <>
                   <SidebarMenuAction
                     type="button"
-                    className={cn(PROJECT_ICON_BUTTON_CLASS, "static after:hidden")}
+                    className={cn(PROJECT_ICON_BUTTON_CLASS, "relative inset-auto! after:hidden")}
                     title={item.isPinned ? t("chat.conversationUnpin") : t("chat.conversationPin")}
                     aria-label={
                       item.isPinned ? t("chat.conversationUnpin") : t("chat.conversationPin")
@@ -1047,7 +1047,7 @@ export const HistoryRow = memo(function HistoryRow(props: HistoryRowProps) {
                     render={
                       <SidebarMenuAction
                         type="button"
-                        className={cn(PROJECT_ICON_BUTTON_CLASS, "static after:hidden")}
+                        className={cn(PROJECT_ICON_BUTTON_CLASS, "relative inset-auto! after:hidden")}
                         disabled={isInteractionDisabled || isBusy}
                         title={t("chat.conversationMore")}
                         aria-label={t("chat.conversationMore")}
@@ -1775,7 +1775,7 @@ export const ProjectRow = memo(function ProjectRow(props: {
                 >
                   <SidebarMenuAction
                     type="button"
-                    className={cn(PROJECT_ICON_BUTTON_CLASS, "static after:hidden")}
+                    className={cn(PROJECT_ICON_BUTTON_CLASS, "relative inset-auto! after:hidden")}
                     aria-label={t("chat.newConversation")}
                     onClick={() => props.onNewConversation?.(project)}
                     disabled={isInteractionDisabled || !props.onNewConversation}
@@ -1793,7 +1793,7 @@ export const ProjectRow = memo(function ProjectRow(props: {
                   render={
                     <SidebarMenuAction
                       type="button"
-                      className={cn(PROJECT_ICON_BUTTON_CLASS, "static after:hidden")}
+                      className={cn(PROJECT_ICON_BUTTON_CLASS, "relative inset-auto! after:hidden")}
                       title={t("chat.workspaceMore")}
                       aria-label={t("chat.workspaceMore")}
                       disabled={isInteractionDisabled}

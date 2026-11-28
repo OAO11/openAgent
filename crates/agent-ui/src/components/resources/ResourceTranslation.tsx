@@ -44,13 +44,15 @@ export function ResourceTranslationProvider(props: {
 }) {
   const models = useMemo(
     () =>
-      props.settings.customProviders.flatMap((provider) =>
-        provider.activeModels.map((model) => ({
-          provider: provider.id,
-          model,
-          label: `${provider.name} · ${model}`,
-        })),
-      ),
+      props.settings.customProviders
+        .filter((provider) => provider.enabled !== false)
+        .flatMap((provider) =>
+          provider.activeModels.map((model) => ({
+            provider: provider.id,
+            model,
+            label: `${provider.name} · ${model}`,
+          })),
+        ),
     [props.settings.customProviders],
   );
   const [selection, select] = useState(() =>
@@ -62,6 +64,9 @@ export function ResourceTranslationProvider(props: {
       : "",
   );
   const model = models.find((item) => modelKey(item) === selection) ?? models[0];
+  useEffect(() => {
+    select(model ? modelKey(model) : "");
+  }, [model]);
   const generate =
     (props.resourceHost ?? getResourceHostCapabilities()).translate ??
     (props.resourceHost ?? getResourceHostCapabilities()).skillsAdapter?.translate;

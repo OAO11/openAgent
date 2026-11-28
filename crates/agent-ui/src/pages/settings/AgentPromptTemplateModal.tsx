@@ -55,17 +55,19 @@ export function AgentPromptTemplateModal({
   const [reasoning, setReasoning] = useState<AgentPromptTemplate["roleReasoning"]>(
     initialData?.roleReasoning,
   );
-  const modelOptions = providers.flatMap((provider) =>
-    provider.models
-      .filter((model) => provider.activeModels.includes(model.id) && !model.imageModel)
-      .map((model) => ({
-        value: JSON.stringify([provider.id, model.id]),
-        label: model.displayName || model.id,
-        providerId: provider.id,
-        providerName: provider.name,
-        providerType: provider.type,
-      })),
-  );
+  const modelOptions = providers
+    .filter((provider) => provider.enabled !== false)
+    .flatMap((provider) =>
+      provider.models
+        .filter((model) => provider.activeModels.includes(model.id) && !model.imageModel)
+        .map((model) => ({
+          value: JSON.stringify([provider.id, model.id]),
+          label: model.displayName || model.id,
+          providerId: provider.id,
+          providerName: provider.name,
+          providerType: provider.type,
+        })),
+    );
   const selected = modelOptions.find((option) => option.value === modelKey);
   const [providerId, modelId] = modelKey ? (JSON.parse(modelKey) as [string, string]) : ["", ""];
   const capability = selected ? resolveModelThinking(selected.providerType, modelId) : undefined;
